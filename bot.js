@@ -22,6 +22,7 @@ const app = express();
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.get("/result", (req, res) => {
   console.log("Hello World!");
 
@@ -32,6 +33,11 @@ app.get("/result", (req, res) => {
 app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
+app.get("/payment-success", (req, res) => {
+  const { OutSum, InvId, SignatureValue } = req.body;
+  console.log(OutSum, InvId, SignatureValue, "SSSUU");
+});
+
 // function generateSignature(login, outSum, invId, password1) {
 //   const data = `${login}:${outSum}:${invId}:${password1}`;
 //   return crypto.createHash("md5").update(data).digest("hex").toLowerCase();
