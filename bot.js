@@ -1051,17 +1051,6 @@ bot.on("message", async (msg) => {
     user.processType !== "catalog_price=8000" &&
     user.processType !== "catalog_price=15000"
   ) {
-    await bot.sendMessage(
-      chatId,
-      "Вы не можете начать новое действие, пока не завершите текущее.",
-      {
-        reply_markup: {
-          keyboard: [["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      }
-    );
     return;
   } else if (text === "О нас") {
     await collectionUser.updateOne(
