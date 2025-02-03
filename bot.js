@@ -218,10 +218,8 @@ bot.onText(/\/test/, (msg) => {
     // Пример значений
 
     const login = "Florimnodi"; // Ваш логин
-    const outSum = 11; // Сумма платежа
-    const invId = 12345; // ID инвойса
+    const outSum = 110; // Сумма платежа
 
-    const password1 = "kNs2f8goXOWGY7AU0s2k"; // Пароль 1 для генерации SignatureValue
     const invDesc = "Custom transaction description message";
 
     // Optional options.
