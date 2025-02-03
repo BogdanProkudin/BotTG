@@ -19,6 +19,19 @@ import validateAddress, {
 // Вставьте токен вашего бота
 const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
 const app = express();
+import { RobokassaHelper } from "node-robokassa";
+
+const robokassaHelper = new RobokassaHelper({
+  // REQUIRED OPTIONS:
+  merchantLogin: "Florimnodi",
+  hashingAlgorithm: "md5",
+  password1: "kNs2f8goXOWGY7AU0s2k",
+  password2: "pE4fu3bO2qglZCa3dI5T",
+
+  // OPTIONAL CONFIGURATION
+  testMode: true, // Whether to use test mode globally
+  resultUrlRequestMethod: "POST", // HTTP request method selected for "ResultURL" requests
+});
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 app.use(express.json());
@@ -34,59 +47,18 @@ app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
 app.post("/payment-success", (req, res) => {
-  const { OutSum, InvId, SignatureValue } = req.body;
-  const merchantLogin = "Florimnodi";
-  // Логируем входящие данные для отладки
-  console.log("Получен запрос от Robokassa:", {
-    OutSum,
-    InvId,
-    SignatureValue,
+  robokassaHelper.handleResultUrlRequest(req, res, function (values, userData) {
+    console.log({
+      values: values, // Will contain general values like "invId" and "outSum"
+      userData: userData, // Will contain all your custom data passed previously, e.g.: "productId"
+    });
+    console.log(values);
   });
-
-  // Рассчитываем контрольную сумму
-  const signature = calculateSignature(
-    merchantLogin,
-    OutSum,
-    InvId,
-    "pE4fu3bO2qglZCa3dI5T"
-  );
-  // Проверяем подпись
-  console.log(signature, SignatureValue);
-
-  if (signature.toUpperCase() !== SignatureValue.toUpperCase()) {
-    console.log("Ошибка верификации:", { signature, SignatureValue });
-    return res.status(400).send("Ошибка верификации");
-  }
-
-  // Подпись верна, оплата подтверждена
-  console.log(`✅ Оплата подтверждена! ID заказа: ${InvId}, Сумма: ${OutSum}`);
-
-  // Обновляем статус заказа в базе данных
-  // Например, отмечаем заказ как оплаченный
-
-  // Отправляем ответ Robokassa
-  res.send(`OK${InvId}`);
 });
 
-// function generateSignature(login, outSum, invId, password1) {
-//   const data = `${login}:${outSum}:${invId}:${password1}`;
-//   return crypto.createHash("md5").update(data).digest("hex").toLowerCase();
-// }
-
-// // Функция для генерации ссылки для Робокассы
-// function generatePaymentUrl(login, outSum, invId, description, password1) {
-//   const signature = generateSignature(login, outSum, invId, password1);
-//   const url = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${login}&OutSum=${outSum}&InvId=${invId}&Description=${description}&SignatureValue=${signature}`;
-//   return url;
-// }
 import crypto from "crypto";
 import { URLSearchParams } from "url";
 
-/**
- * Create signature MD5.
- * @param {...any} args - Arguments to generate the signature.
- * @returns {string} MD5 signature.
- */
 function calculateSignature(...args) {
   console.log("ARGS", ...args);
 
@@ -96,133 +68,6 @@ function calculateSignature(...args) {
 
   return hash.digest("hex");
 }
-
-/**
- * Parse the query parameters from a URL.
- * @param {string} request - The URL to parse.
- * @returns {Object} Parsed query parameters.
- */
-function parseResponse(request) {
-  const params = {};
-  const queryString = new URL(request).search;
-  new URLSearchParams(queryString).forEach((value, key) => {
-    params[key] = value;
-  });
-  return params;
-}
-
-/**
- * Validate the received signature.
- * @param {number} orderNumber - Invoice number.
- * @param {string} receivedSum - Cost of goods.
- * @param {string} receivedSignature - Signature value.
- * @param {string} password - Merchant password.
- * @returns {boolean} Whether the signature is valid.
- */
-function checkSignatureResult(
-  orderNumber,
-  receivedSum,
-  receivedSignature,
-  password
-) {
-  const signature = calculateSignature(receivedSum, orderNumber, password);
-  console.log(signature);
-
-  return signature.toLowerCase() === receivedSignature.toLowerCase();
-}
-
-/**
- * Generate a payment link for redirecting the user to the service.
- * @param {string} merchantLogin - Merchant login.
- * @param {string} merchantPassword1 - Merchant password.
- * @param {string} cost - Cost of goods.
- * @param {number} number - Invoice number.
- * @param {string} description - Description of the purchase.
- * @param {number} isTest - Whether it's a test environment.
- * @param {string} robokassaPaymentUrl - Payment URL.
- * @returns {string} Generated payment link.
- */
-function generatePaymentLink(
-  merchantLogin,
-  merchantPassword1,
-  cost,
-  number,
-
-  robokassaPaymentUrl = "https://auth.robokassa.ru/Merchant/Index.aspx"
-) {
-  const signature = calculateSignature(
-    merchantLogin,
-    cost,
-    number,
-    merchantPassword1
-  );
-  console.log(signature, "1", merchantLogin, cost, number, merchantPassword1);
-
-  const data = {
-    MerchantLogin: merchantLogin,
-    OutSum: cost,
-    InvId: number,
-
-    SignatureValue: signature,
-    IsTest: 1,
-  };
-  console.log(
-    data,
-    "dataa",
-    `${robokassaPaymentUrl}?${new URLSearchParams(data).toString()}`
-  );
-
-  return `${robokassaPaymentUrl}?${new URLSearchParams(data).toString()}`;
-}
-
-/**
- * Verify notification (ResultURL).
- * @param {string} merchantPassword2 - Merchant password.
- * @param {string} request - HTTP parameters.
- * @returns {string} Result of the verification.
- */
-function resultPayment(merchantPassword2, request) {
-  const paramRequest = parseResponse(request);
-  const {
-    OutSum: cost,
-    InvId: number,
-    SignatureValue: signature,
-  } = paramRequest;
-
-  if (checkSignatureResult(number, cost, signature, merchantPassword2)) {
-    return `OK${paramRequest["InvId"]}`;
-  }
-  return "bad sign";
-}
-
-/**
- * Verify operation parameters in SuccessURL script.
- * @param {string} merchantPassword1 - Merchant password.
- * @param {string} request - HTTP parameters.
- * @returns {string} Result of the verification.
- */
-function checkSuccessPayment(merchantPassword1, request) {
-  const paramRequest = parseResponse(request);
-  const {
-    OutSum: cost,
-    InvId: number,
-    SignatureValue: signature,
-  } = paramRequest;
-
-  if (checkSignatureResult(number, cost, signature, merchantPassword1)) {
-    return "Thank you for using our service";
-  }
-  return "bad sign";
-}
-
-export {
-  calculateSignature,
-  parseResponse,
-  checkSignatureResult,
-  generatePaymentLink,
-  resultPayment,
-  checkSuccessPayment,
-};
 
 let db;
 let collectionUser;
@@ -369,10 +214,29 @@ bot.onText(/\/test/, (msg) => {
     const invId = 12345; // ID инвойса
 
     const password1 = "kNs2f8goXOWGY7AU0s2k"; // Пароль 1 для генерации SignatureValue
-    const url = generatePaymentLink(login, password1, outSum, invId);
+    const invDesc = "Custom transaction description message";
+
+    // Optional options.
+    const options = {
+      invId: 100500, // Your custom order ID
+      email: "email@example.com", // E-Mail of the paying user
+      outSumCurrency: "USD", // Transaction currency
+      isTest: true, // Whether to use test mode for this specific transaction
+      userData: {
+        // You could pass any additional data, which will be returned to you later on
+        productId: "1337",
+        username: "testuser",
+      },
+    };
+
+    const paymentUrl = robokassaHelper.generatePaymentUrl(
+      outSum,
+      invDesc,
+      options
+    );
 
     // Отправка ссылки пользователю
-    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${url}`);
+    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
   } catch (e) {
     console.log(e);
   }
