@@ -36,6 +36,20 @@ app.get("/fail", (req, res) => {
 app.post("/payment-success", (req, res) => {
   const { OutSum, InvId, SignatureValue } = req.body;
   console.log(OutSum, InvId, SignatureValue, "SSSUU", "looog");
+  const hash = crypto
+    .createHash("md5")
+    .update(`${OutSum}:${InvId}:${"pE4fu3bO2qglZCa3dI5T"}`)
+    .digest("hex")
+    .toUpperCase();
+
+  if (hash !== SignatureValue.toUpperCase()) {
+    return res.status(400).send("Ошибка верификации");
+  }
+
+  console.log(`✅ Оплата подтверждена! ID заказа: ${InvId}, Сумма: ${OutSum}`);
+
+  // Возвращаем подтверждение Robokassa
+  res.send(`OK${InvId}`);
   return res.status(200).json({ message: "result info", info: req.body });
 });
 
