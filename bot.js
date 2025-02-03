@@ -46,7 +46,7 @@ app.get("/fail", (req, res) => {
 
 // Вспомогательная функция для вычисления контрольной суммы (SignatureValue)
 function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
-  const baseString = `${OutSum}:${InvId}:${password2}:${additionalParams}`;
+  const baseString = `${OutSum}:${InvId}:${password2}`;
   const hash = crypto
     .createHash("md5")
     .update(baseString, "utf-8")
@@ -269,7 +269,7 @@ function generatePaymentLink(
   );
 
   // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${description}&SignatureValue=${signatureValue}&isTest=1`;
+  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}&isTest=1`;
 
   // Возвращаем ссылку
   return paymentLink;
@@ -288,8 +288,7 @@ bot.onText(/\/test/, (msg) => {
       merchantLogin,
       password1,
       invId,
-      outSum,
-      description
+      outSum
     );
     // Отправка ссылки пользователю
     bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
