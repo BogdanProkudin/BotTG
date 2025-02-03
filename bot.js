@@ -4,12 +4,12 @@ import showcase from "./showcase.js";
 import connectToDatabase from "./db.js";
 import { addShowcaseItem, editShowcaseItem } from "./showcase.js";
 import { MongoClient } from "mongodb";
-import Robokaska from "Robokaska";
+import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
 import createCalendar from "./calendarFunc.js";
 import cors from "cors";
 import express from "express";
-import Robokassa from "robokassa";
+
 import {
   startAddProcess,
   cancelProcess,
