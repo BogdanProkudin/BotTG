@@ -89,9 +89,10 @@ function processPaymentNotification(req, res) {
     password2,
     additionalParamsString
   );
+  console.log(calculatedHash, SignatureValue);
 
   // Проверка, совпадает ли контрольная сумма
-  if (calculatedHash === SignatureValue) {
+  if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
     // Проверка тестового режима
     if (IsTest === "1") {
       console.log(
