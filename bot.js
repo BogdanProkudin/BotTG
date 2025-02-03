@@ -267,7 +267,7 @@ function generatePaymentLink(
   );
 
   // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/PaymentForm/FormMS.js?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${description}&SignatureValue=${signatureValue}&isTest=1`;
+  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${description}&SignatureValue=${signatureValue}&isTest=1`;
 
   // Возвращаем ссылку
   return paymentLink;
