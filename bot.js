@@ -119,16 +119,6 @@ app.listen(port, () => {
 
 app.post("/payment-success", processPaymentNotification);
 
-function calculateSignature(...args) {
-  console.log("ARGS", ...args);
-
-  const hash = crypto.createHash("md5");
-  const data = args.map(String).join(":");
-  hash.update(data);
-
-  return hash.digest("hex");
-}
-
 let db;
 let collectionUser;
 let collectionProduct;
