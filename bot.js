@@ -113,10 +113,6 @@ function processPaymentNotification(req, res) {
   }
 }
 
-app.listen(port, () => {
-  console.log(`Сервер запущен на http://localhost:${port}`);
-});
-
 app.post("/payment-success", processPaymentNotification);
 
 let db;
