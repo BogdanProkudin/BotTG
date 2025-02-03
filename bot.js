@@ -46,10 +46,10 @@ app.get("/result", (req, res) => {
 app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
-app.post("/payment-success", (req, res) => {
+app.post("/payment-success", async (req, res) => {
   console.log("payment-success", req.body);
 
-  const result = robokassaHelper.handleResultUrlRequest(
+  const result = await robokassaHelper.handleResultUrlRequest(
     req,
     res,
     function (values, userData) {
@@ -58,7 +58,7 @@ app.post("/payment-success", (req, res) => {
         userData: userData, // Will contain all your custom data passed previously, e.g.: "productId"
       });
       console.log(values);
-      return { values, userData };
+      return { values, userData, zxc: "zxc" };
     }
   );
   console.log("payment-success2", result);
