@@ -35,8 +35,8 @@ app.get("/fail", (req, res) => {
 });
 app.post("/payment-success", (req, res) => {
   const { OutSum, InvId, SignatureValue } = req.body;
-  console.log(OutSum, InvId, SignatureValue, "SSSUU");
-  return res.status(200).json({ message: "result info" });
+  console.log(OutSum, InvId, SignatureValue, "SSSUU", "looog");
+  return res.status(200).json({ message: "result info", info: req.body });
 });
 
 // function generateSignature(login, outSum, invId, password1) {
