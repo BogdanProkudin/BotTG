@@ -279,7 +279,7 @@ bot.onText(/\/test/, (msg) => {
     const merchantLogin = "Florimnodi";
     const password1 = "kNs2f8goXOWGY7AU0s2k";
     const invId = 0;
-    const description = "Техническая документация по ROBOKASSA";
+    const description = "ТехническаядокументацияпоROBOKASSA";
     const outSum = "8.96";
 
     const paymentUrl = generatePaymentLink(
