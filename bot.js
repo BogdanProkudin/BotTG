@@ -62,6 +62,7 @@ app.post("/payment-success", async (req, res) => {
     }
   );
   console.log("payment-success2", result);
+  bot.sendMessage(1941288913, result);
 });
 
 import crypto from "crypto";
@@ -314,10 +315,8 @@ bot.on("location", async (msg) => {
 });
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const address = await validateAddress("Днепр, массив Тополь-3, 20");
-  if (address) {
-    console.log(address);
-  }
+  console.log(chatId, "chatId");
+
   if (!collectionUser) {
     return;
   }
