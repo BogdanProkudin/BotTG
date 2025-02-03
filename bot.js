@@ -145,8 +145,7 @@ function generatePaymentLink(
   merchantPassword1,
   cost,
   number,
-  description,
-  isTest = 1,
+
   robokassaPaymentUrl = "https://auth.robokassa.ru/Merchant/Index.aspx"
 ) {
   const signature = calculateSignature(
@@ -163,8 +162,13 @@ function generatePaymentLink(
     InvId: number,
 
     SignatureValue: signature,
-    IsTest: isTest,
+    IsTest: 1,
   };
+  console.log(
+    data,
+    "dataa",
+    `${robokassaPaymentUrl}?${new URLSearchParams(data).toString()}`
+  );
 
   return `${robokassaPaymentUrl}?${new URLSearchParams(data).toString()}`;
 }
@@ -363,14 +367,7 @@ bot.onText(/\/test/, (msg) => {
     const invId = 12345; // ID инвойса
 
     const password1 = "kNs2f8goXOWGY7AU0s2k"; // Пароль 1 для генерации SignatureValue
-    const url = generatePaymentLink(
-      login,
-      password1,
-      outSum,
-      invId,
-
-      1
-    );
+    const url = generatePaymentLink(login, password1, outSum, invId);
 
     // Отправка ссылки пользователю
     bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${url}`);
