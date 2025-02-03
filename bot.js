@@ -35,7 +35,7 @@ app.get("/fail", (req, res) => {
 });
 app.post("/payment-success", (req, res) => {
   const { OutSum, InvId, SignatureValue } = req.body;
-
+  const merchantLogin = "Florimnodi";
   // Логируем входящие данные для отладки
   console.log("Получен запрос от Robokassa:", {
     OutSum,
@@ -44,14 +44,14 @@ app.post("/payment-success", (req, res) => {
   });
 
   // Рассчитываем контрольную сумму
-  const hash = crypto
-    .createHash("md5")
-    .update(`${OutSum}:${InvId}:${"pE4fu3bO2qglZCa3dI5T"}`) // Замените на ваш MerchantPass2
-    .digest("hex")
-    .toUpperCase();
-
+  const signature = calculateSignature(
+    merchantLogin,
+    OutSum,
+    InvId,
+    "pE4fu3bO2qglZCa3dI5T"
+  );
   // Проверяем подпись
-  if (hash !== SignatureValue.toUpperCase()) {
+  if (signature !== SignatureValue.toUpperCase()) {
     console.log("Ошибка верификации:", { hash, SignatureValue });
     return res.status(400).send("Ошибка верификации");
   }
@@ -159,7 +159,7 @@ function generatePaymentLink(
     MerchantLogin: merchantLogin,
     OutSum: cost,
     InvId: number,
-    Description: description,
+
     SignatureValue: signature,
     IsTest: isTest,
   };
@@ -359,14 +359,14 @@ bot.onText(/\/test/, (msg) => {
     const login = "Florimnodi"; // Ваш логин
     const outSum = 11; // Сумма платежа
     const invId = 12345; // ID инвойса
-    const description = "testba"; // Описание
+
     const password1 = "kNs2f8goXOWGY7AU0s2k"; // Пароль 1 для генерации SignatureValue
     const url = generatePaymentLink(
       login,
       password1,
       outSum,
       invId,
-      description,
+
       1
     );
 
