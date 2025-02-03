@@ -47,13 +47,21 @@ app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
 app.post("/payment-success", (req, res) => {
-  robokassaHelper.handleResultUrlRequest(req, res, function (values, userData) {
-    console.log({
-      values: values, // Will contain general values like "invId" and "outSum"
-      userData: userData, // Will contain all your custom data passed previously, e.g.: "productId"
-    });
-    console.log(values);
-  });
+  console.log("payment-success", req.body);
+
+  const result = robokassaHelper.handleResultUrlRequest(
+    req,
+    res,
+    function (values, userData) {
+      console.log({
+        values: values, // Will contain general values like "invId" and "outSum"
+        userData: userData, // Will contain all your custom data passed previously, e.g.: "productId"
+      });
+      console.log(values);
+      return { values, userData };
+    }
+  );
+  console.log("payment-success2", result);
 });
 
 import crypto from "crypto";
