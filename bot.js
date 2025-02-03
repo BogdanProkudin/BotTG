@@ -43,7 +43,6 @@ app.get("/result", (req, res) => {
 app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
-const crypto = require("crypto"); // Для расчета хэша
 
 // Вспомогательная функция для вычисления контрольной суммы (SignatureValue)
 function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
