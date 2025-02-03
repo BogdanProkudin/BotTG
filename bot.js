@@ -8,6 +8,7 @@ import { Calendar } from "telegram-inline-calendar";
 import createCalendar from "./calendarFunc.js";
 import cors from "cors";
 import express from "express";
+import Robokassa from "robokassa";
 import {
   startAddProcess,
   cancelProcess,
@@ -19,18 +20,9 @@ import validateAddress, {
 // Вставьте токен вашего бота
 const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
 const app = express();
-import { RobokassaHelper } from "node-robokassa";
-
-const robokassaHelper = new RobokassaHelper({
-  // REQUIRED OPTIONS:
-  merchantLogin: "Florimnodi",
-  hashingAlgorithm: "md5",
-  password1: "kNs2f8goXOWGY7AU0s2k",
-  password2: "pE4fu3bO2qglZCa3dI5T",
-
-  // OPTIONAL CONFIGURATION
-  testMode: true, // Whether to use test mode globally
-  resultUrlRequestMethod: "POST", // HTTP request method selected for "ResultURL" requests
+var r = new Robokassa({
+  login: "Florimnodi",
+  password: "kNs2f8goXOWGY7AU0s2k",
 });
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -47,22 +39,11 @@ app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
 app.post("/payment-success", async (req, res) => {
-  console.log("payment-success", req.body);
-
-  const result = await robokassaHelper.handleResultUrlRequest(
-    req,
-    res,
-    function (values, userData) {
-      console.log({
-        values: values, // Will contain general values like "invId" and "outSum"
-        userData: userData, // Will contain all your custom data passed previously, e.g.: "productId"
-      });
-      console.log(values);
-      return { values, userData, zxc: "zxc" };
-    }
-  );
-  console.log("payment-success2", result);
-  bot.sendMessage(1941288913, result);
+  if (r.checkPayment(req.params)) {
+    console.log("PAYMENT SUCCESS!");
+  } else {
+    console.log("PAYMENT NOT SUCCESS!");
+  }
 });
 
 import crypto from "crypto";
@@ -219,29 +200,12 @@ bot.onText(/\/test/, (msg) => {
     // Пример значений
 
     const login = "Florimnodi"; // Ваш логин
-    const outSum = 110; // Сумма платежа
 
-    const invDesc = "Custom transaction description message";
-
-    // Optional options.
-    const options = {
-      invId: 100500, // Your custom order ID
-      email: "email@example.com", // E-Mail of the paying user
-      outSumCurrency: "USD", // Transaction currency
-      isTest: true, // Whether to use test mode for this specific transaction
-      userData: {
-        // You could pass any additional data, which will be returned to you later on
-        productId: "1337",
-        username: "testuser",
-      },
-    };
-
-    const paymentUrl = robokassaHelper.generatePaymentUrl(
-      outSum,
-      invDesc,
-      options
-    );
-
+    const paymentUrl = r.merchantUrl({
+      id: "invoice number",
+      summ: 500,
+      description: "description of invoice",
+    });
     // Отправка ссылки пользователю
     bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
   } catch (e) {
