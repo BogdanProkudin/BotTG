@@ -35,24 +35,35 @@ app.get("/fail", (req, res) => {
 });
 app.post("/payment-success", (req, res) => {
   const { OutSum, InvId, SignatureValue } = req.body;
-  console.log(OutSum, InvId, SignatureValue, "SSSUU", "looog");
+
+  // Логируем входящие данные для отладки
+  console.log("Получен запрос от Robokassa:", {
+    OutSum,
+    InvId,
+    SignatureValue,
+  });
+
+  // Рассчитываем контрольную сумму
   const hash = crypto
     .createHash("md5")
-    .update(`${OutSum}:${InvId}:${"pE4fu3bO2qglZCa3dI5T"}`)
+    .update(`${OutSum}:${InvId}:${"pE4fu3bO2qglZCa3dI5T"}`) // Замените на ваш MerchantPass2
     .digest("hex")
     .toUpperCase();
 
+  // Проверяем подпись
   if (hash !== SignatureValue.toUpperCase()) {
-    console.log("ошибка верификации", hash, SignatureValue.toUpperCase());
-
+    console.log("Ошибка верификации:", { hash, SignatureValue });
     return res.status(400).send("Ошибка верификации");
   }
 
+  // Подпись верна, оплата подтверждена
   console.log(`✅ Оплата подтверждена! ID заказа: ${InvId}, Сумма: ${OutSum}`);
 
-  // Возвращаем подтверждение Robokassa
+  // Обновляем статус заказа в базе данных
+  // Например, отмечаем заказ как оплаченный
+
+  // Отправляем ответ Robokassa
   res.send(`OK${InvId}`);
-  return res.status(200).json({ message: "result info", info: req.body });
 });
 
 // function generateSignature(login, outSum, invId, password1) {
