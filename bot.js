@@ -47,11 +47,7 @@ app.get("/fail", (req, res) => {
 // Вспомогательная функция для вычисления контрольной суммы (SignatureValue)
 function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
   const baseString = `${OutSum}:${InvId}:${password2}`;
-  const hash = crypto
-    .createHash("md5")
-    .update(baseString, "utf-8")
-    .digest("hex")
-    .toUpperCase();
+  const hash = md5(baseString);
   return hash;
 }
 
