@@ -88,6 +88,8 @@ import { URLSearchParams } from "url";
  * @returns {string} MD5 signature.
  */
 function calculateSignature(...args) {
+  console.log("ARGS", ...args);
+
   const hash = crypto.createHash("md5");
   const data = args.map(String).join(":");
   hash.update(data);
