@@ -10,6 +10,7 @@ import createCalendar from "./calendarFunc.js";
 import cors from "cors";
 import express from "express";
 
+import crypto from "crypto";
 import {
   startAddProcess,
   cancelProcess,
@@ -42,23 +43,82 @@ app.get("/result", (req, res) => {
 app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
-app.post("/payment-success", async (req, res) => {
-  const { invoiceID, outSum, SignatureValue } = req.body;
-  const isPaymentValid = roboKassa.checkPay(invoiceID, outSum, SignatureValue);
+const crypto = require("crypto"); // Для расчета хэша
 
-  if (isPaymentValid) {
-    console.log("validd", isPaymentValid);
+// Вспомогательная функция для вычисления контрольной суммы (SignatureValue)
+function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
+  const baseString = `${OutSum}:${InvId}:${password2}:${additionalParams}`;
+  const hash = crypto
+    .createHash("md5")
+    .update(baseString, "utf-8")
+    .digest("hex")
+    .toUpperCase();
+  return hash;
+}
 
-    res.send("okay");
-  } else {
-    console.log("not validd", isPaymentValid);
+// Функция для обработки уведомления от Robokassa на ResultURL
+function processPaymentNotification(req, res) {
+  // Получаем параметры из запроса Robokassa
+  const {
+    OutSum,
+    InvId,
+    Fee,
+    EMail,
+    SignatureValue,
+    PaymentMethod,
+    IncCurrLabel,
+    IsTest,
+    ...additionalParams
+  } = req.query;
 
-    res.staus(400).send("NOT okay");
+  // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
+  const password2 = "pE4fu3bO2qglZCa3dI5T";
+
+  // Генерация строки для вычисления контрольной суммы
+  let additionalParamsString = "";
+  if (Object.keys(additionalParams).length > 0) {
+    additionalParamsString = Object.entries(additionalParams)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(":");
   }
+
+  // Рассчитываем хэш
+  const calculatedHash = calculateSignature(
+    OutSum,
+    InvId,
+    password2,
+    additionalParamsString
+  );
+
+  // Проверка, совпадает ли контрольная сумма
+  if (calculatedHash === SignatureValue) {
+    // Проверка тестового режима
+    if (IsTest === "1") {
+      console.log(
+        `Тестовый режим! Оплата успешна. InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+      );
+    } else {
+      console.log(
+        `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+      );
+    }
+
+    // Отправляем ответ Robokassa для подтверждения получения уведомления
+    res.status(200).send(`OK${InvId}`);
+  } else {
+    // Контрольные суммы не совпали — ошибка
+    console.error(`Ошибка верификации для InvId: ${InvId}`);
+
+    // Отправляем ошибку или просто ничего не отправляем
+    res.status(400).send("Error");
+  }
+}
+
+app.listen(port, () => {
+  console.log(`Сервер запущен на http://localhost:${port}`);
 });
 
-import crypto from "crypto";
-import { URLSearchParams } from "url";
+app.post("/payment-success", processPaymentNotification);
 
 function calculateSignature(...args) {
   console.log("ARGS", ...args);
@@ -205,22 +265,47 @@ async function handleEdit(userId, index) {
 
   return "Предмет найден! Отправьте новое фото товара.";
 }
+function md5(string) {
+  return crypto.createHash("md5").update(string).digest("hex").toUpperCase();
+}
+
+function generatePaymentLink(
+  merchantLogin,
+  password1,
+  invId,
+  outSum,
+  description
+) {
+  // Расчёт контрольной суммы (SignatureValue)
+  const signatureValue = md5(
+    `${merchantLogin}:${outSum}:${invId}:${password1}`
+  );
+
+  // Формируем ссылку на оплату с параметрами
+  const paymentLink = `https://auth.robokassa.ru/Merchant/PaymentForm/FormMS.js?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${description}&SignatureValue=${signatureValue}&isTest=1`;
+
+  // Возвращаем ссылку
+  return paymentLink;
+}
 bot.onText(/\/test/, (msg) => {
   const chatId = msg.chat.id;
   try {
     // Пример значений
+    const merchantLogin = "Florimnodi";
+    const password1 = "kNs2f8goXOWGY7AU0s2k";
+    const invId = 0;
+    const description = "Техническая документация по ROBOKASSA";
+    const outSum = "8.96";
 
-    const login = "Florimnodi"; // Ваш логин
-
-    const payURL = roboKassa.generateUrl(
-      "invoice number",
-      "email",
-      500,
-      "description of invoice"
+    const paymentUrl = generatePaymentLink(
+      merchantLogin,
+      password1,
+      invId,
+      outSum,
+      description
     );
-
     // Отправка ссылки пользователю
-    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${payURL}`);
+    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
   } catch (e) {
     console.log(e);
   }
