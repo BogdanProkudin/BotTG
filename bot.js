@@ -51,8 +51,10 @@ app.post("/payment-success", (req, res) => {
     "pE4fu3bO2qglZCa3dI5T"
   );
   // Проверяем подпись
-  if (signature !== SignatureValue.toUpperCase()) {
-    console.log("Ошибка верификации:", { hash, SignatureValue });
+  console.log(signature, SignatureValue);
+
+  if (signature.toUpperCase() !== SignatureValue.toUpperCase()) {
+    console.log("Ошибка верификации:", { signature, SignatureValue });
     return res.status(400).send("Ошибка верификации");
   }
 
