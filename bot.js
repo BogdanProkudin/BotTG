@@ -146,7 +146,7 @@ function generatePaymentLink(
   cost,
   number,
   description,
-  isTest = 0,
+  isTest = 1,
   robokassaPaymentUrl = "https://auth.robokassa.ru/Merchant/Index.aspx"
 ) {
   const signature = calculateSignature(
