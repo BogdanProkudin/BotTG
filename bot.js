@@ -71,7 +71,7 @@ function processPaymentNotification(req, res) {
   } = req.query;
 
   // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-  const password2 = "pE4fu3bO2qglZCa3dI5T";
+  const password2 = "Y9RZz04OKGb1geNyDF5n";
 
   // Генерация строки для вычисления контрольной суммы
   let additionalParamsString = "";
@@ -106,7 +106,7 @@ function processPaymentNotification(req, res) {
     res.status(200).send(`OK${InvId}`);
   } else {
     // Контрольные суммы не совпали — ошибка
-    console.error(`Ошибка верификации для InvId: ${InvId}`);
+    console.error(`Ошибка верификации для InvId2: ${InvId}`);
 
     // Отправляем ошибку или просто ничего не отправляем
     res.status(400).send("Error");
