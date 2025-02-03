@@ -43,6 +43,8 @@ app.post("/payment-success", (req, res) => {
     .toUpperCase();
 
   if (hash !== SignatureValue.toUpperCase()) {
+    console.log("ошибка верификации", hash, SignatureValue.toUpperCase());
+
     return res.status(400).send("Ошибка верификации");
   }
 
