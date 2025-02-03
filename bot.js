@@ -4,6 +4,7 @@ import showcase from "./showcase.js";
 import connectToDatabase from "./db.js";
 import { addShowcaseItem, editShowcaseItem } from "./showcase.js";
 import { MongoClient } from "mongodb";
+import Robokaska from "Robokaska";
 import { Calendar } from "telegram-inline-calendar";
 import createCalendar from "./calendarFunc.js";
 import cors from "cors";
@@ -20,10 +21,13 @@ import validateAddress, {
 // Вставьте токен вашего бота
 const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
 const app = express();
-var r = new Robokassa({
-  login: "Florimnodi",
-  password: "kNs2f8goXOWGY7AU0s2k",
-});
+const config = {
+  shopIdentifier: "Florimnodi",
+  password1: "kNs2f8goXOWGY7AU0s2k",
+  password2: "pE4fu3bO2qglZCa3dI5T",
+  testMode: true, // Указываем true, если работаем в тестовом режиме
+};
+const roboKassa = new Robokaska(config);
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 app.use(express.json());
@@ -39,10 +43,17 @@ app.get("/fail", (req, res) => {
   return res.status(200).json({ message: "Transaction failed" });
 });
 app.post("/payment-success", async (req, res) => {
-  if (r.checkPayment(req.params)) {
-    console.log("PAYMENT SUCCESS!");
+  const { invoiceID, outSum, SignatureValue } = req.body;
+  const isPaymentValid = roboKassa.checkPay(invoiceID, outSum, SignatureValue);
+
+  if (isPaymentValid) {
+    console.log("validd", isPaymentValid);
+
+    res.send("okay");
   } else {
-    console.log("PAYMENT NOT SUCCESS!");
+    console.log("not validd", isPaymentValid);
+
+    res.staus(400).send("NOT okay");
   }
 });
 
@@ -201,13 +212,15 @@ bot.onText(/\/test/, (msg) => {
 
     const login = "Florimnodi"; // Ваш логин
 
-    const paymentUrl = r.merchantUrl({
-      id: "invoice number",
-      summ: 500,
-      description: "description of invoice",
-    });
+    const payURL = roboKassa.generateUrl(
+      "invoice number",
+      "email",
+      500,
+      "description of invoice"
+    );
+
     // Отправка ссылки пользователю
-    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
+    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${payURL}`);
   } catch (e) {
     console.log(e);
   }

@@ -10,6 +10,7 @@
     "node-robokassa": "^0.0.0",
     "node-telegram-bot-api": "^0.66.0",
     "nodemon": "^3.1.9",
+    "robokaska": "^1.0.0",
     "robokassa": "^0.0.4",
     "telegraf": "^4.16.3",
     "telegram-inline-calendar": "^2.2.0"
