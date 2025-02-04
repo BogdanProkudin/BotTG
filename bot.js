@@ -95,8 +95,8 @@ async function processPaymentNotification(req, res) {
     return;
   }
   console.log("", InvId, collectionUser);
-
-  const user = await collectionUser.findOne({ invId: InvId });
+  const invIdNumber = Number(InvId);
+  const user = await collectionUser.findOne({ invId: invIdNumber });
   console.log(user, "", InvId);
   // Генерация строки для вычисления контрольной суммы
   let additionalParamsString = "";
@@ -131,7 +131,7 @@ async function processPaymentNotification(req, res) {
     // Отправляем ответ Robokassa для подтверждения получения уведомления
     res.status(200).send(`OK${InvId}`);
     bot.sendMessage(
-      InvId,
+      user.userId,
       `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
     );
   } else {
