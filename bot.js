@@ -52,7 +52,31 @@ function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
 }
 
 // Функция для обработки уведомления от Robokassa на ResultURL
-function processPaymentNotification(req, res) {
+
+app.post("/payment-success", processPaymentNotification);
+
+let db;
+let collectionUser;
+let collectionProduct;
+
+MongoClient.connect(
+  "mongodb+srv://quard:Screaper228@cluster0.zyg0fil.mongodb.net/?retryWrites=true&w=majority",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+)
+  .then((client) => {
+    db = client.db();
+    collectionUser = db.collection("dbUser");
+    collectionProduct = db.collection("db1");
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB", err);
+  });
+
+async function processPaymentNotification(req, res) {
   // Получаем параметры из запроса Robokassa
   const {
     OutSum,
@@ -79,14 +103,20 @@ function processPaymentNotification(req, res) {
   }
 
   // Рассчитываем хэш
-  const calculatedHash = calculateSignature(
+  const calculatedHash = await calculateSignature(
     OutSum,
     InvId,
     password2,
     additionalParamsString
   );
   console.log(calculatedHash, SignatureValue);
+  if (!collectionUser) {
+    return;
+  }
+  const userId = decodeInvId(InvId);
+  console.log(userId);
 
+  const user = await collectionUser.findOne({ userId });
   // Проверка, совпадает ли контрольная сумма
   if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
     // Проверка тестового режима
@@ -102,37 +132,18 @@ function processPaymentNotification(req, res) {
 
     // Отправляем ответ Robokassa для подтверждения получения уведомления
     res.status(200).send(`OK${InvId}`);
+    bot.sendMessage(
+      InvId,
+      `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+    );
   } else {
     // Контрольные суммы не совпали — ошибка
-    console.error(`Ошибка верификации для InvId22: ${InvId}`);
+    console.error(`Ошибка верификации для InvId: ${InvId}`);
 
     // Отправляем ошибку или просто ничего не отправляем
     res.status(400).send("Error");
   }
 }
-
-app.post("/payment-success", processPaymentNotification);
-
-let db;
-let collectionUser;
-let collectionProduct;
-
-MongoClient.connect(
-  "mongodb+srv://quard:Screaper228@cluster0.zyg0fil.mongodb.net/?retryWrites=true&w=majority",
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-)
-  .then((client) => {
-    db = client.db();
-    collectionUser = db.collection("dbUser");
-    collectionProduct = db.collection("db1");
-    console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.error("Error connecting to MongoDB", err);
-  });
 
 // Функция обработки фото
 async function handlePhoto(userId, photoFileId) {
@@ -273,10 +284,11 @@ function generatePaymentLink(
 bot.onText(/\/test/, (msg) => {
   const chatId = msg.chat.id;
   try {
+    const userId = msg.from.id;
     // Пример значений
     const merchantLogin = "Florimnodi";
     const password1 = "kNs2f8goXOWGY7AU0s2k";
-    const invId = 0;
+    const invId = encodeInvId(userId);
     const description = "ТехническаядокументацияпоROBOKASSA";
     const outSum = "8.96";
 
@@ -514,6 +526,17 @@ bot.on("text", async (msg) => {
       });
       return;
     }
+    if (user && user.processType && user.processType === "prepare_payment") {
+      const message = await cancelProcess(userId, collectionUser);
+      bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["Перейти к оплате"], ["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
     if (user && user.processType && user.processType === "extra_information") {
       const message = await cancelProcess(userId, collectionUser);
       bot.sendMessage(chatId, message, {
@@ -696,7 +719,7 @@ bot.on("message", async (msg) => {
       user.processType !== "catalog_price=4000" &&
       user.processType !== "catalog_price=8000" &&
       user.processType !== "catalog_price=15000" &&
-      user.processType !== "payment")
+      user.processType !== "prepare_payment")
   ) {
     console.log("User is in process");
 
@@ -768,7 +791,14 @@ bot.on("message", async (msg) => {
 
       await collectionUser.updateOne(
         { userId },
-        { $set: { selectedProduct, processType: "select_date" } }
+        {
+          $set: {
+            selectedProduct,
+            processType: "select_date",
+            price: selectedProduct.price,
+            photo: selectedProduct.photo,
+          },
+        }
       );
 
       await calendar.startNavCalendar(
@@ -786,8 +816,10 @@ bot.on("message", async (msg) => {
         );
         await bot.sendMessage(
           chatId,
-          "Теперь укажите примерное время во сколько вы заберете товар",
+          "🕒 *Укажите примерное время, когда вы заберёте товар.*\n\n" +
+            `Выберите удобное время ниже.`,
           {
+            parse_mode: "Markdown",
             reply_markup: {
               keyboard: [
                 ["9-11", "12-14"],
@@ -813,13 +845,18 @@ bot.on("message", async (msg) => {
             parse_mode: "Markdown",
           }
         );
-        await bot.sendMessage(chatId, "Пожалуйста, отправьте свою локацию.", {
-          reply_markup: {
-            keyboard: [["Назад"]],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
-        });
+        await bot.sendMessage(
+          chatId,
+          "📍 **Пожалуйста, отправьте свою локацию.**\n\nЭто поможет нам быстрее найти ваш адрес и оформить доставку. 🗺️",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
         // Обновление статуса пользователя в процессе
         await collectionUser.updateOne(
           { userId },
@@ -859,22 +896,28 @@ bot.on("message", async (msg) => {
           { userId },
           { $set: { address: text, processType: "select_time" } }
         );
-        bot.sendMessage(chatId, "Адрес найден. Теперь укажите время доставки", {
-          reply_markup: {
-            keyboard: [
-              ["9-11", "12-14"],
-              ["15-17", "18-20", "20-21"],
-              ["Назад"],
-            ],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
-        });
+        bot.sendMessage(
+          chatId,
+          "📍 **Адрес найден!**\n\nТеперь, пожалуйста, укажите удобное время доставки. ⏰",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [
+                ["9-11", "12-14"],
+                ["15-17", "18-20", "20-21"],
+                ["Назад"],
+              ],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
       } else {
         bot.sendMessage(
           chatId,
-          "Адрес не найден. Пожалуйста, попробуйте изменить адрес ",
+          "❌ **Адрес не найден.**\n\nПожалуйста, попробуйте изменить адрес ",
           {
+            parse_mode: "Markdown",
             reply_markup: {
               keyboard: [["Назад"]],
               resize_keyboard: true,
@@ -892,8 +935,9 @@ bot.on("message", async (msg) => {
       );
       bot.sendMessage(
         chatId,
-        "Время доставки выбрано. Теперь укажите номер телефона  получателя",
+        "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите номер телефона получателя. 📞",
         {
+          parse_mode: "Markdown",
           reply_markup: {
             keyboard: [["Назад"]],
             resize_keyboard: true,
@@ -907,8 +951,9 @@ bot.on("message", async (msg) => {
       if (!phoneRegex.test(text)) {
         return bot.sendMessage(
           chatId,
-          "Неверный формат номера телефона. Пожалуйста, попробуйте еще раз.",
+          "❌ **Неверный формат номера телефона.**\n\nПожалуйста, проверьте введенные данные и попробуйте еще раз. 📞",
           {
+            parse_mode: "Markdown",
             reply_markup: {
               keyboard: [["Назад"]],
               resize_keyboard: true,
@@ -921,10 +966,11 @@ bot.on("message", async (msg) => {
         { userId },
         { $set: { recipientNumber: text, processType: "extra_information" } }
       );
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
-        "Номер телефона получателя выбран. Теперь при желании укажите дополнительную информацию о заказе или нажмите кнопку 'Перейти к оплате'",
+        "📱 Номер телефона получателя успешно выбран. \n\nТеперь, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
         {
+          parse_mode: "Markdown",
           reply_markup: {
             keyboard: [["Перейти к оплате"], ["Назад"]],
             resize_keyboard: true,
@@ -939,14 +985,15 @@ bot.on("message", async (msg) => {
     ) {
       await collectionUser.updateOne(
         { userId },
-        { $set: { extraInformation: text, processType: "payment" } }
+        { $set: { extraInformation: text, processType: "prepare_payment" } }
       );
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
-        "Дополнительная информация о заказе сохранена. Перейдите к оплате.",
+        "✨ Дополнительная информация о заказе успешно сохранена. Перейдите к оплате. ✨",
         {
+          parse_mode: "Markdown",
           reply_markup: {
-            keyboard: [["Перейти к оплате"], ["Назад"]],
+            keyboard: [[" Перейти к оплате"], [" Назад"]],
             resize_keyboard: true,
             one_time_keyboard: true,
           },
@@ -957,19 +1004,72 @@ bot.on("message", async (msg) => {
       text === "Перейти к оплате" &&
       text !== "Назад"
     ) {
+      const merchantLogin = "Florimnodi";
+      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const invId = encodeInvId(userId);
+
+      const outSum = await user.price;
+
+      const paymentUrl = await generatePaymentLink(
+        merchantLogin,
+        password1,
+        invId,
+        outSum
+      );
+
       await collectionUser.updateOne(
         { userId },
-        { $set: { processType: "payment" } }
+        { $set: { invId, processType: "payment" } }
       );
-      await bot.sendMessage(chatId, "Логика оплаты...", {
-        reply_markup: {
-          keyboard: [["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-    } else if (user.processType === "payment" && text !== "Назад") {
-      bot.sendMessage(chatId, "логика оплаты...");
+      // Отправка ссылки пользователю
+      await bot.sendMessage(
+        chatId,
+        `💳 *Оплата заказа* 💳\n\n` +
+          `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
+          `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
+        {
+          parse_mode: "Markdown",
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+    } else if (user.processType === "prepare_payment" && text !== "Назад") {
+      await bot.sendMessage(chatId, "логика оплаты...");
+      const merchantLogin = "Florimnodi";
+      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const invId = encodeInvId(userId);
+
+      const outSum = await user.price;
+
+      const paymentUrl = await generatePaymentLink(
+        merchantLogin,
+        password1,
+        invId,
+        outSum
+      );
+
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { invId, processType: "payment" } }
+      );
+      // Отправка ссылки пользователю
+      await bot.sendMessage(
+        chatId,
+        `💳 *Оплата заказа* 💳\n\n` +
+          `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
+          `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
+        {
+          parse_mode: "Markdown",
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
     } else if (text !== "Назад") {
       //   await bot.sendMessage(
       //     chatId,

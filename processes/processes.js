@@ -58,6 +58,18 @@ export async function cancelProcess(userId, collectionUser) {
     );
     return "Вы вернулись в процесс ввода дополнительной информации.";
   }
+  if (user && user.processType === "prepare_payment") {
+    await collectionUser.updateOne(
+      { userId },
+      {
+        $set: {
+          processType: "extra_information",
+          extraInformation: null,
+        },
+      }
+    );
+    return "Вы вернулись в процесс ввода дополнительной информации.";
+  }
   if (user && user.processType === "extra_information") {
     await collectionUser.updateOne(
       { userId },
