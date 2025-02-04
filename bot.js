@@ -112,7 +112,7 @@ async function processPaymentNotification(req, res) {
     return;
   }
   const user = await collectionUser.findOne({ invId: InvId });
-  console.log(user.invId, "IDDD");
+  console.log(user, "", InvId);
 
   // Проверка, совпадает ли контрольная сумма
   if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
