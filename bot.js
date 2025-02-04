@@ -91,7 +91,13 @@ async function processPaymentNotification(req, res) {
 
   // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
   const password2 = "xj5vgtK1YFw684pASrFj";
+  if (!collectionUser) {
+    return;
+  }
+  console.log(user, "", InvId, collectionUser);
 
+  const user = await collectionUser.findOne({ invId: InvId });
+  console.log(user, "", InvId);
   // Генерация строки для вычисления контрольной суммы
   let additionalParamsString = "";
   if (Object.keys(additionalParams).length > 0) {
@@ -108,11 +114,6 @@ async function processPaymentNotification(req, res) {
     additionalParamsString
   );
   console.log(calculatedHash, SignatureValue);
-  if (!collectionUser) {
-    return;
-  }
-  const user = await collectionUser.findOne({ invId: InvId });
-  console.log(user, "", InvId);
 
   // Проверка, совпадает ли контрольная сумма
   if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
