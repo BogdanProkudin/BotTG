@@ -3,25 +3,17 @@ import crypto from "crypto";
 const SECRET = "Satira228"; // Секретный ключ
 
 export function encodeInvId(userId) {
-  const randomNum = Math.floor(Math.random() * 1000000); // Рандомное число
-  const data = `${randomNum}:${userId}`;
-
-  const hmac = crypto.createHmac("sha256", SECRET).update(data).digest("hex"); // Подписываем
-  return Buffer.from(`${data}:${hmac}`).toString("base64");
+  const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-значное случайное число
+  const rawId = `${userId}${randomNum}`; // Конкатенация userId и randomNum
+  const checksum =
+    rawId.split("").reduce((sum, digit) => sum + Number(digit), 0) % 10; // Контрольная сумма
+  return Number(`${rawId}${checksum}`); // Возвращаем число с контрольной суммой
 }
 
 // Пример
 
-export function decodeInvId(encodedInvId) {
-  const decoded = Buffer.from(encodedInvId, "base64").toString("utf8");
-  const [randomNum, userId, hmac] = decoded.split(":");
-
-  // Проверяем подпись
-  const checkHmac = crypto
-    .createHmac("sha256", SECRET)
-    .update(`${randomNum}:${userId}`)
-    .digest("hex");
-  if (checkHmac !== hmac) throw new Error("⛔ Подпись неверна!");
-
-  return userId;
+export function decodeInvId(invId) {
+  const invStr = invId.toString();
+  const rawId = invStr.slice(0, -5); // Убираем последние 5 цифр (randomNum + checksum)
+  return Number(rawId);
 }
