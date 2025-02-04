@@ -447,7 +447,7 @@ bot.onText(/\/add/, async (msg) => {
   }
   const message = await startAddProcess(userId, collectionUser);
 
-  bot.sendMessage(chatId, message, {
+  await bot.sendMessage(chatId, message, {
     reply_markup: {
       keyboard: [["Назад"]],
       resize_keyboard: true,
@@ -499,7 +499,7 @@ bot.on("text", async (msg) => {
       user.processType === "catalog_price=15000"
     ) {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
             ["До 4.000₽"],
@@ -515,7 +515,7 @@ bot.on("text", async (msg) => {
     }
     if (user && user.processType && user.processType === "payment") {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [["Перейти к оплате"], ["Назад"]],
           resize_keyboard: true,
@@ -526,7 +526,7 @@ bot.on("text", async (msg) => {
     }
     if (user && user.processType && user.processType === "prepare_payment") {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [["Перейти к оплате"], ["Назад"]],
           resize_keyboard: true,
@@ -537,7 +537,7 @@ bot.on("text", async (msg) => {
     }
     if (user && user.processType && user.processType === "extra_information") {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
@@ -548,7 +548,7 @@ bot.on("text", async (msg) => {
     }
     if (user && user.processType && user.processType === "recipient_number") {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [["9-11", "12-14"], ["15-17", "18-20", "20-21"], ["Назад"]],
           resize_keyboard: true,
@@ -563,7 +563,7 @@ bot.on("text", async (msg) => {
       (user && user.processType && user.processType === "select_time")
     ) {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
             ["Отправить локацию"],
@@ -577,7 +577,7 @@ bot.on("text", async (msg) => {
       return;
     } else {
       const message = await cancelProcess(userId, collectionUser);
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
             ["О нас", "Наш сайт"], // Кнопки в одном ряду
@@ -613,7 +613,7 @@ bot.on("photo", async (msg) => {
   const fileId = photo.file_id;
 
   const message = await handlePhoto(userId, fileId);
-  bot.sendMessage(chatId, message);
+  await bot.sendMessage(chatId, message);
 });
 
 // Обработчик текстовых сообщений (для получения цены товара)
@@ -653,7 +653,7 @@ bot.on("message", async (msg) => {
       message ===
       "Пожалуйста, отправьте корректную цену товара. Например: 100, 199.99"
     ) {
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
@@ -661,7 +661,7 @@ bot.on("message", async (msg) => {
         },
       });
     } else {
-      bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
             ["О нас", "Наш сайт"],
@@ -682,7 +682,7 @@ bot.on("message", async (msg) => {
     msg.text[0] !== "/"
   ) {
     const message = await handleEdit(userId, msg.text);
-    bot.sendMessage(chatId, message);
+    await bot.sendMessage(chatId, message);
   }
 });
 
@@ -894,7 +894,7 @@ bot.on("message", async (msg) => {
           { userId },
           { $set: { address: text, processType: "select_time" } }
         );
-        bot.sendMessage(
+        await bot.sendMessage(
           chatId,
           "📍 **Адрес найден!**\n\nТеперь, пожалуйста, укажите удобное время доставки. ⏰",
           {
@@ -911,7 +911,7 @@ bot.on("message", async (msg) => {
           }
         );
       } else {
-        bot.sendMessage(
+        await bot.sendMessage(
           chatId,
           "❌ **Адрес не найден.**\n\nПожалуйста, попробуйте изменить адрес ",
           {
@@ -931,7 +931,7 @@ bot.on("message", async (msg) => {
         { userId },
         { $set: { time: text, processType: "recipient_number" } }
       );
-      bot.sendMessage(
+      await bot.sendMessage(
         chatId,
         "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите номер телефона получателя. 📞",
         {
@@ -1114,7 +1114,7 @@ bot.on("message", async (msg) => {
 
 🌟 Мы здесь, чтобы создавать радость для вас и ваших близких.
 `;
-    bot.sendMessage(chatId, text, {
+    await bot.sendMessage(chatId, text, {
       reply_markup: {
         keyboard: [["Назад"]],
         resize_keyboard: true,
@@ -1127,7 +1127,7 @@ bot.on("message", async (msg) => {
       { $set: { isInProcess: true, processType: "site" } }
     );
 
-    bot.sendMessage(chatId, "www.florimondi.ru/about/", {
+    await bot.sendMessage(chatId, "www.florimondi.ru/about/", {
       reply_markup: {
         keyboard: [["Назад"]],
         resize_keyboard: true,
@@ -1139,7 +1139,7 @@ bot.on("message", async (msg) => {
       { userId },
       { $set: { isInProcess: true, processType: "catalog" } }
     );
-    bot.sendMessage(chatId, "Выберете диапазон цен ", {
+    await bot.sendMessage(chatId, "Выберете диапазон цен ", {
       reply_markup: {
         keyboard: [
           ["До 4.000₽"],
@@ -1158,21 +1158,21 @@ bot.on("message", async (msg) => {
       { $set: { isInProcess: true, processType: "catalog_price=4000" } }
     );
 
-    bot.sendMessage(chatId, "Вы выбрали диапазон: До 4.000₽", {
+    await bot.sendMessage(chatId, "Вы выбрали диапазон: До 4.000₽", {
       reply_markup: {
         keyboard: [["Назад"]],
         resize_keyboard: true,
         one_time_keyboard: true,
       },
     });
-    sendSlide(chatId, 0);
+    await sendSlide(chatId, 0);
   }
   if (text === "4.0000₽-8.000₽" && user.processType === "catalog") {
     await collectionUser.updateOne(
       { userId },
       { $set: { isInProcess: true, processType: "catalog_price=8000" } }
     );
-    bot.sendMessage(chatId, "Вы выбрали диапазон: 4.0000₽-8.000₽", {
+    await bot.sendMessage(chatId, "Вы выбрали диапазон: 4.0000₽-8.000₽", {
       reply_markup: {
         keyboard: [["Назад"]],
         resize_keyboard: true,
@@ -1185,7 +1185,7 @@ bot.on("message", async (msg) => {
       { userId },
       { $set: { isInProcess: true, processType: "catalog_price=15000" } }
     );
-    bot.sendMessage(chatId, "Вы выбрали диапазон: 8.000₽-15.000₽", {
+    await bot.sendMessage(chatId, "Вы выбрали диапазон: 8.000₽-15.000₽", {
       reply_markup: {
         keyboard: [["Назад"]],
         resize_keyboard: true,
@@ -1218,14 +1218,14 @@ bot.on("callback_query", async (query) => {
 
     if (action === "prev" && slideIndex > -1) {
       // Переход на предыдущий слайд
-      bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-      sendSlide(chatId, slideIndex - 1);
+      await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
+      await sendSlide(chatId, slideIndex - 1);
     } else if (action === "next" && slideIndex < slides.length - 1) {
       // Переход на следующий слайд
-      bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-      sendSlide(chatId, slideIndex + 1);
+      await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
+      await sendSlide(chatId, slideIndex + 1);
     } else if (action === "disable") {
-      bot.answerCallbackQuery(query.id, {
+      await bot.answerCallbackQuery(query.id, {
         text: "Нет доступных действий.",
         show_alert: false,
       });
