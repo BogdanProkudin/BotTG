@@ -94,7 +94,7 @@ async function processPaymentNotification(req, res) {
   if (!collectionUser) {
     return;
   }
-  console.log(user, "", InvId, collectionUser);
+  console.log("", InvId, collectionUser);
 
   const user = await collectionUser.findOne({ invId: InvId });
   console.log(user, "", InvId);
