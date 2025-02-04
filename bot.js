@@ -3,7 +3,6 @@ import catalog from "./catalog.js";
 import showcase from "./showcase.js";
 import connectToDatabase from "./db.js";
 import { addShowcaseItem, editShowcaseItem } from "./showcase.js";
-import { decodeInvId, encodeInvId } from "./crypto.js";
 import { MongoClient } from "mongodb";
 import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
@@ -53,8 +52,6 @@ function calculateSignature(OutSum, InvId, password2, additionalParams = "") {
 }
 
 // Функция для обработки уведомления от Robokassa на ResultURL
-
-app.post("/payment-success", processPaymentNotification);
 
 let db;
 let collectionUser;
@@ -114,10 +111,9 @@ async function processPaymentNotification(req, res) {
   if (!collectionUser) {
     return;
   }
-  const userId = decodeInvId(InvId);
-  console.log(userId);
+  const user = await collectionUser.findOne({ invId: InvId });
+  console.log(user.invId, "IDDD");
 
-  const user = await collectionUser.findOne({ userId });
   // Проверка, совпадает ли контрольная сумма
   if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
     // Проверка тестового режима
@@ -145,6 +141,7 @@ async function processPaymentNotification(req, res) {
     res.status(400).send("Error");
   }
 }
+app.post("/payment-success", processPaymentNotification);
 
 // Функция обработки фото
 async function handlePhoto(userId, photoFileId) {
@@ -285,11 +282,10 @@ function generatePaymentLink(
 bot.onText(/\/test/, (msg) => {
   const chatId = msg.chat.id;
   try {
-    const userId = msg.from.id;
     // Пример значений
     const merchantLogin = "Florimnodi";
     const password1 = "kNs2f8goXOWGY7AU0s2k";
-    const invId = encodeInvId(userId);
+    const invId = 0;
     const description = "ТехническаядокументацияпоROBOKASSA";
     const outSum = "8.96";
 
@@ -1007,7 +1003,7 @@ bot.on("message", async (msg) => {
     ) {
       const merchantLogin = "Florimnodi";
       const password1 = "kNs2f8goXOWGY7AU0s2k";
-      const invId = encodeInvId(userId);
+      const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
 
@@ -1041,7 +1037,7 @@ bot.on("message", async (msg) => {
       await bot.sendMessage(chatId, "логика оплаты...");
       const merchantLogin = "Florimnodi";
       const password1 = "kNs2f8goXOWGY7AU0s2k";
-      const invId = encodeInvId(userId);
+      const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
 
