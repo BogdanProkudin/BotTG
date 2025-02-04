@@ -1,6 +1,6 @@
-const crypto = require("crypto");
+import crypto from "crypto";
 
-const SECRET = "my_secret_key"; // Секретный ключ
+const SECRET = "Satira228"; // Секретный ключ
 
 export function encodeInvId(userId) {
   const randomNum = Math.floor(Math.random() * 1000000); // Рандомное число
