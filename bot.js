@@ -24,7 +24,7 @@ const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
 const app = express();
 const config = {
   shopIdentifier: "Florimnodi",
-  password1: "kNs2f8goXOWGY7AU0s2k",
+  password1: "dtBD5xF7xi2tN2B7QqAO",
   password2: "pE4fu3bO2qglZCa3dI5T",
   testMode: true, // Указываем true, если работаем в тестовом режиме
 };
@@ -90,7 +90,7 @@ async function processPaymentNotification(req, res) {
   console.log(req.body);
 
   // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-  const password2 = "xj5vgtK1YFw684pASrFj";
+  const password2 = "YuC5Vo27fxpNEnHV86cS";
   if (!collectionUser) {
     return;
   }
@@ -275,7 +275,7 @@ function generatePaymentLink(
   );
 
   // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}&isTest=1`;
+  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}`;
 
   // Возвращаем ссылку
   return paymentLink;
@@ -285,7 +285,7 @@ bot.onText(/\/test/, (msg) => {
   try {
     // Пример значений
     const merchantLogin = "Florimnodi";
-    const password1 = "kNs2f8goXOWGY7AU0s2k";
+    const password1 = "dtBD5xF7xi2tN2B7QqAO";
     const invId = 0;
     const description = "ТехническаядокументацияпоROBOKASSA";
     const outSum = "8.96";
@@ -1003,7 +1003,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1037,7 +1037,7 @@ bot.on("message", async (msg) => {
     } else if (user.processType === "prepare_payment" && text !== "Назад") {
       await bot.sendMessage(chatId, "логика оплаты...");
       const merchantLogin = "Florimnodi";
-      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
