@@ -275,7 +275,7 @@ function generatePaymentLink(
   );
 
   // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}`;
+  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}&isTest=0`;
 
   // Возвращаем ссылку
   return paymentLink;
@@ -947,7 +947,7 @@ bot.on("message", async (msg) => {
       const phoneRegex =
         /^(\+7|8)\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}$/;
       if (!phoneRegex.test(text)) {
-        return bot.sendMessage(
+        await bot.sendMessage(
           chatId,
           "❌ **Неверный формат номера телефона.**\n\nПожалуйста, проверьте введенные данные и попробуйте еще раз. 📞",
           {
@@ -959,6 +959,7 @@ bot.on("message", async (msg) => {
             },
           }
         );
+        return;
       }
       await collectionUser.updateOne(
         { userId },
