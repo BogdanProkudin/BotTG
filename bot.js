@@ -1,12 +1,9 @@
 import TelegramBot from "node-telegram-bot-api";
-import catalog from "./catalog.js";
-import showcase from "./showcase.js";
-import connectToDatabase from "./db.js";
-import { addShowcaseItem, editShowcaseItem } from "./showcase.js";
+import { generateCalendar, getMonthName } from "./calendar.js";
 import { MongoClient } from "mongodb";
 import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
-import createCalendar from "./calendarFunc.js";
+
 import cors from "cors";
 import express from "express";
 
@@ -28,7 +25,7 @@ const config = {
   password2: "pE4fu3bO2qglZCa3dI5T",
   testMode: true, // Указываем true, если работаем в тестовом режиме
 };
-const roboKassa = new Robokaska(config);
+
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 app.use(express.json());
@@ -535,6 +532,25 @@ bot.on("text", async (msg) => {
       });
       return;
     }
+    if (
+      user &&
+      user.processType &&
+      user.processType === "extra_information" &&
+      user.address === "Самовывоз"
+    ) {
+      console.log("exit");
+
+      const message = await cancelProcess(userId, collectionUser);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["9-11", "12-14"], ["15-17", "18-20", "20-21"], ["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
+
     if (user && user.processType && user.processType === "extra_information") {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
@@ -546,7 +562,12 @@ bot.on("text", async (msg) => {
       });
       return;
     }
-    if (user && user.processType && user.processType === "recipient_number") {
+    if (
+      user &&
+      user.processType &&
+      user.processType === "recipient_number" &&
+      user.address !== "Самовывоз"
+    ) {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
@@ -557,6 +578,7 @@ bot.on("text", async (msg) => {
       });
       return;
     }
+
     if (
       (user && user.processType && user.processType === "send_location") ||
       (user && user.processType && user.processType === "enter_address") ||
@@ -686,10 +708,6 @@ bot.on("message", async (msg) => {
   }
 });
 
-const calendar = new Calendar(bot, {
-  date_format: "DD-MM-YYYY",
-  language: "ru",
-});
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -799,19 +817,25 @@ bot.on("message", async (msg) => {
         }
       );
 
-      await calendar.startNavCalendar(
-        msg,
-        `Вы выбрали: №${productIndex + 1} - ${
-          selectedProduct.price || "Без цены"
-        } ₽.\nУкажите дату или выберите её из календаря:`
+      const chatId = msg.chat.id;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const calendar = generateCalendar(year, month);
+
+      bot.sendMessage(
+        chatId,
+        "Пожалуйста, выберите удобную вам дату:          ",
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
       );
     } else if (user.processType === "prepare_address") {
       // Сохранение адреса
       if (text === "Самовывоз") {
-        await collectionUser.updateOne(
-          { userId },
-          { $set: { address: "Самовывоз", processType: "select_time" } }
-        );
         await bot.sendMessage(
           chatId,
           "🕒 *Укажите примерное время, когда вы заберёте товар.*\n\n" +
@@ -828,6 +852,10 @@ bot.on("message", async (msg) => {
               one_time_keyboard: true,
             },
           }
+        );
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { address: "Самовывоз", processType: "select_time" } }
         );
       } else if (text === "Отправить локацию") {
         await bot.sendMessage(
@@ -890,10 +918,6 @@ bot.on("message", async (msg) => {
       console.log(validationResponse.message, validationResponse.valid);
 
       if (validationResponse.valid) {
-        await collectionUser.updateOne(
-          { userId },
-          { $set: { address: text, processType: "select_time" } }
-        );
         await bot.sendMessage(
           chatId,
           "📍 **Адрес найден!**\n\nТеперь, пожалуйста, укажите удобное время доставки. ⏰",
@@ -909,6 +933,10 @@ bot.on("message", async (msg) => {
               one_time_keyboard: true,
             },
           }
+        );
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { address: text, processType: "select_time" } }
         );
       } else {
         await bot.sendMessage(
@@ -927,10 +955,26 @@ bot.on("message", async (msg) => {
 
       // Обновление статуса пользователя в процессе
     } else if (user.processType === "select_time" && text !== "Назад") {
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { time: text, processType: "recipient_number" } }
-      );
+      if (user.address === "Самовывоз") {
+        await bot.sendMessage(
+          chatId,
+          "⏰ **Время доставки выбрано.**\n\nТеперь, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Перейти к оплате"], ["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { time: text, processType: "extra_information" } }
+        );
+        return;
+      }
+
       await bot.sendMessage(
         chatId,
         "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите номер телефона получателя. 📞",
@@ -940,6 +984,16 @@ bot.on("message", async (msg) => {
             keyboard: [["Назад"]],
             resize_keyboard: true,
             one_time_keyboard: true,
+          },
+        }
+      );
+
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            time: text,
+            processType: "recipient_number",
           },
         }
       );
@@ -961,10 +1015,8 @@ bot.on("message", async (msg) => {
         );
         return;
       }
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { recipientNumber: text, processType: "extra_information" } }
-      );
+      console.log("EXTRA INFORMATION");
+
       await bot.sendMessage(
         chatId,
         "📱 Номер телефона получателя успешно выбран. \n\nТеперь, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
@@ -977,15 +1029,15 @@ bot.on("message", async (msg) => {
           },
         }
       );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { recipientNumber: text, processType: "extra_information" } }
+      );
     } else if (
       user.processType === "extra_information" &&
       text !== "Назад" &&
       text !== "Перейти к оплате"
     ) {
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { extraInformation: text, processType: "prepare_payment" } }
-      );
       await bot.sendMessage(
         chatId,
         "✨ Дополнительная информация о заказе успешно сохранена. Перейдите к оплате. ✨",
@@ -997,6 +1049,10 @@ bot.on("message", async (msg) => {
             one_time_keyboard: true,
           },
         }
+      );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { extraInformation: text, processType: "prepare_payment" } }
       );
     } else if (
       user.processType === "extra_information" &&
@@ -1036,7 +1092,6 @@ bot.on("message", async (msg) => {
         }
       );
     } else if (user.processType === "prepare_payment" && text !== "Назад") {
-      await bot.sendMessage(chatId, "логика оплаты...");
       const merchantLogin = "Florimnodi";
       const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
@@ -1050,10 +1105,6 @@ bot.on("message", async (msg) => {
         outSum
       );
 
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { invId, processType: "payment" } }
-      );
       // Отправка ссылки пользователю
       await bot.sendMessage(
         chatId,
@@ -1069,6 +1120,11 @@ bot.on("message", async (msg) => {
           },
         }
       );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { invId, processType: "payment" } }
+      );
+      return;
     } else if (text !== "Назад") {
       //   await bot.sendMessage(
       //     chatId,
@@ -1204,9 +1260,10 @@ bot.on("callback_query", async (query) => {
   if (!collectionUser) {
     return;
   }
+  const chatId = query.message.chat.id;
+  const callback_data = query.data;
   const user = await collectionUser.findOne({ userId: query.from.id });
   if (user.processType === "catalog_price=4000") {
-    const chatId = query.message.chat.id;
     console.log(chatId);
 
     // Получаем текущий индекс из callback_data
@@ -1232,20 +1289,19 @@ bot.on("callback_query", async (query) => {
       });
     }
   } else if (
-    query.message.message_id == calendar.chats.get(query.message.chat.id)
+    callback_data.startsWith("date_") ||
+    callback_data.startsWith("prev_") ||
+    callback_data.startsWith("next_") ||
+    callback_data === "ignore"
   ) {
-    var res;
-    res = calendar.clickButtonCalendar(query);
-    if (res !== -1) {
-      await collectionUser.updateOne(
-        { userId: query.from.id },
-        { $set: { selectedDate: res, processType: "prepare_address" } }
-      );
+    // const chatId = query.message.chat.id;
+    // const data = callbackQuery.data;
 
-      // Отправляем запрос на ввод адреса
+    if (callback_data.startsWith("date_")) {
+      const date = callback_data.split("_")[1];
       await bot.sendMessage(
-        query.message.chat.id,
-        `Вы выбрали дату: *${res}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
+        chatId,
+        `Вы выбрали дату: *${date}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
           `1️⃣ *Через локацию:* Нажмите кнопку "Отправить локацию" для отправки своего местоположения.\n` +
           `(Для отправки локации необходимо, чтобы у вас был телефон и включено разрешение на доступ к местоположению в Telegram.)\n\n` +
           `2️⃣ *Через текст:* Введите ваш адрес в формате: *Город, Улица, Дом* (например: Москва, Тверская улица, 7). \n` +
@@ -1266,7 +1322,45 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
+      bot.deleteMessage(chatId, query.message.message_id);
+    } else if (
+      callback_data.startsWith("prev_") ||
+      callback_data.startsWith("next_")
+    ) {
+      const [action, year, month] = callback_data.split("_");
+      let newYear = parseInt(year);
+      let newMonth = parseInt(month);
+
+      if (action === "prev") {
+        newMonth -= 1;
+        if (newMonth < 0) {
+          newMonth = 11;
+          newYear -= 1;
+        }
+      } else if (action === "next") {
+        newMonth += 1;
+        if (newMonth > 11) {
+          newMonth = 0;
+          newYear += 1;
+        }
+      }
+
+      const calendar = generateCalendar(newYear, newMonth);
+
+      await bot.editMessageReplyMarkup(
+        { inline_keyboard: calendar },
+        {
+          chat_id: chatId,
+          message_id: query.message.message_id,
+        }
+      );
+    } else if (callback_data === "ignore") {
+      bot.answerCallbackQuery(query.id, {
+        text: "Эта дата недоступна для выбора.",
+      });
     }
+
+    // Отправляем запрос на ввод адреса
   }
 });
 const slides = [

@@ -70,7 +70,11 @@ export async function cancelProcess(userId, collectionUser) {
     );
     return "Вы вернулись в процесс ввода дополнительной информации.";
   }
-  if (user && user.processType === "extra_information") {
+  if (
+    user &&
+    user.processType === "extra_information" &&
+    user.address !== "Самовывоз"
+  ) {
     await collectionUser.updateOne(
       { userId },
       {
@@ -81,6 +85,22 @@ export async function cancelProcess(userId, collectionUser) {
       }
     );
     return "Вы вернулись в процесс ввода номера получателя.";
+  }
+  if (
+    user &&
+    user.address === "Самовывоз" &&
+    user.processType === "extra_information"
+  ) {
+    await collectionUser.updateOne(
+      { userId },
+      {
+        $set: {
+          processType: "select_time",
+          time: null,
+        },
+      }
+    );
+    return "Вы вернулись в процесс выбора времени.";
   }
   if (user && user.processType === "recipient_number") {
     await collectionUser.updateOne(
