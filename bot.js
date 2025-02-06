@@ -16,12 +16,13 @@ import {
 import validateAddress, {
   getAddressFromCoordinates,
 } from "./validateAddress.js";
+import axios from "axios";
 // Вставьте токен вашего бота
 const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
 const app = express();
 const config = {
   shopIdentifier: "Florimnodi",
-  password1: "dtBD5xF7xi2tN2B7QqAO",
+  password1: "kNs2f8goXOWGY7AU0s2k",
   password2: "pE4fu3bO2qglZCa3dI5T",
   testMode: true, // Указываем true, если работаем в тестовом режиме
 };
@@ -73,70 +74,87 @@ MongoClient.connect(
 
 async function processPaymentNotification(req, res) {
   // Получаем параметры из запроса Robokassa
-  const {
-    OutSum,
-    InvId,
-    Fee,
-    EMail,
-    SignatureValue,
-    PaymentMethod,
-    IncCurrLabel,
-    IsTest,
-    ...additionalParams
-  } = req.body;
-  console.log(req.body);
+  try {
+    const {
+      OutSum,
+      InvId,
+      Fee,
+      EMail,
+      SignatureValue,
+      PaymentMethod,
+      IncCurrLabel,
+      IsTest,
+      ...additionalParams
+    } = req.body;
+    console.log(req.body);
 
-  // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-  const password2 = "YuC5Vo27fxpNEnHV86cS";
-  if (!collectionUser) {
-    return;
-  }
-  console.log("", InvId, collectionUser);
-  const invIdNumber = Number(InvId);
-  const user = await collectionUser.findOne({ invId: invIdNumber });
-  console.log(user, "", InvId);
-  // Генерация строки для вычисления контрольной суммы
-  let additionalParamsString = "";
-  if (Object.keys(additionalParams).length > 0) {
-    additionalParamsString = Object.entries(additionalParams)
-      .map(([key, value]) => `${key}=${value}`)
-      .join(":");
-  }
-
-  // Рассчитываем хэш
-  const calculatedHash = await calculateSignature(
-    OutSum,
-    InvId,
-    password2,
-    additionalParamsString
-  );
-  console.log(calculatedHash, SignatureValue);
-
-  // Проверка, совпадает ли контрольная сумма
-  if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
-    // Проверка тестового режима
-    if (IsTest === "1") {
-      console.log(
-        `Тестовый режим! Оплата успешна. InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
-      );
-    } else {
-      console.log(
-        `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
-      );
+    // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
+    const password2 = "xj5vgtK1YFw684pASrFj";
+    if (!collectionUser) {
+      return;
+    }
+    console.log("", InvId, collectionUser);
+    const invIdNumber = Number(InvId);
+    const user = await collectionUser.findOne({ invId: invIdNumber });
+    console.log(user, "", InvId);
+    // Генерация строки для вычисления контрольной суммы
+    let additionalParamsString = "";
+    if (Object.keys(additionalParams).length > 0) {
+      additionalParamsString = Object.entries(additionalParams)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(":");
     }
 
-    // Отправляем ответ Robokassa для подтверждения получения уведомления
-    res.status(200).send(`OK${InvId}`);
-    bot.sendMessage(
-      user.userId,
-      `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+    // Рассчитываем хэш
+    const calculatedHash = await calculateSignature(
+      OutSum,
+      InvId,
+      password2,
+      additionalParamsString
     );
-  } else {
-    // Контрольные суммы не совпали — ошибка
-    console.error(`Ошибка верификации для InvId: ${InvId}`);
+    console.log(calculatedHash, SignatureValue);
 
-    // Отправляем ошибку или просто ничего не отправляем
-    res.status(400).send("Error");
+    // Проверка, совпадает ли контрольная сумма
+    if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
+      // Проверка тестового режима
+      if (IsTest === "1") {
+        console.log(
+          `Тестовый режим! Оплата успешна. InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+        );
+      } else {
+        console.log(
+          `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+        );
+      }
+
+      // Отправляем ответ Robokassa для подтверждения получения уведомления
+      res.status(200).send(`OK${InvId}`);
+      await bot.sendMessage(
+        user.userId,
+        `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+      );
+      const response = await axios.get(
+        `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${user.photo}`
+      );
+
+      const filePath = await response.data.result.file_path;
+
+      // Скачиваем фото
+      const photoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`;
+      console.log(photoUrl);
+      await bot.sendMessage(
+        -1002294575683,
+        `Оплата успешно прошла! Фото: ${photoUrl} Цена:${user.price} Сумма: ${OutSum}, Email: ${EMail}`
+      );
+    } else {
+      // Контрольные суммы не совпали — ошибка
+      console.error(`Ошибка верификации для InvId: ${InvId}`);
+
+      // Отправляем ошибку или просто ничего не отправляем
+      res.status(400).send("Error");
+    }
+  } catch (e) {
+    console.log(e);
   }
 }
 app.post("/payment-success", processPaymentNotification);
@@ -282,7 +300,7 @@ bot.onText(/\/test/, (msg) => {
   try {
     // Пример значений
     const merchantLogin = "Florimnodi";
-    const password1 = "dtBD5xF7xi2tN2B7QqAO";
+    const password1 = "kNs2f8goXOWGY7AU0s2k";
     const invId = 0;
     const description = "ТехническаядокументацияпоROBOKASSA";
     const outSum = "8.96";
@@ -367,6 +385,10 @@ bot.on("location", async (msg) => {
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   console.log(chatId, "chatId");
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
 
   if (!collectionUser) {
     return;
@@ -423,6 +445,10 @@ bot.onText(/\/start/, async (msg) => {
 bot.onText(/\/add/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
   if (!collectionUser) {
     return;
   }
@@ -457,6 +483,10 @@ bot.onText(/\/add/, async (msg) => {
 bot.onText(/\/edit/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
   if (!collectionUser) {
     return;
   }
@@ -486,6 +516,10 @@ bot.on("text", async (msg) => {
   const text = msg.text.trim();
   if (!collectionUser) {
     return;
+  }
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
   }
   const user = await collectionUser.findOne({ userId });
 
@@ -645,6 +679,10 @@ bot.on("message", async (msg) => {
   if (!collectionUser || !collectionProduct) {
     return;
   }
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
 
   const user = await collectionUser.findOne({ userId });
   if (!user || !user.isInProcess) {
@@ -712,7 +750,12 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
   const userId = msg.from.id;
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  console.log(chatType);
 
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
   if (!collectionUser || !collectionProduct) {
     console.log("collectionUser or collectionProduct is null");
     return;
@@ -1060,7 +1103,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "dtBD5xF7xi2tN2B7QqAO";
+      const password1 = "kNs2f8goXOWGY7AU0s2k";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1093,7 +1136,7 @@ bot.on("message", async (msg) => {
       );
     } else if (user.processType === "prepare_payment" && text !== "Назад") {
       const merchantLogin = "Florimnodi";
-      const password1 = "dtBD5xF7xi2tN2B7QqAO";
+      const password1 = "kNs2f8goXOWGY7AU0s2k";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1142,6 +1185,10 @@ bot.on("message", async (msg) => {
   const text = msg.text;
   if (!collectionUser) {
     return;
+  }
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
   }
   const user = await collectionUser.findOne({ userId });
   if (
