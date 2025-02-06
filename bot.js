@@ -1322,7 +1322,12 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
+
       bot.deleteMessage(chatId, query.message.message_id);
+      await collectionUser.updateOne(
+        { userId: chatId },
+        { $set: { selectedDate: date, processType: "prepare_address" } }
+      );
     } else if (
       callback_data.startsWith("prev_") ||
       callback_data.startsWith("next_")
