@@ -144,7 +144,19 @@ async function processPaymentNotification(req, res) {
       console.log(photoUrl);
       await bot.sendMessage(
         -1002294575683,
-        `Оплата успешно прошла! Фото: ${photoUrl} Цена:${user.price} Сумма: ${OutSum}, Email: ${EMail}`
+        `Оплата успешно прошла! Цена:${
+          user.price
+        } , Email: ${EMail}  ссылка на фото: ${photoUrl}, Номер телефона получателя: ${
+          user.recipientNumber ? user.recipientNumber : "Не указан номер"
+        } Адрес доставки: ${
+          user.address ? user.address : "Не указан адрес"
+        } , Дата доставки ${
+          user.selectedDate ? user.selectedDate : "Не указана дата"
+        } Время доставки/Удобное время для самовывоза: ${
+          user.time ? user.time : "Не указано время"
+        } Дополнительная информация: ${
+          user.extraInformation ? user.extraInformation : "Не указано"
+        }`
       );
     } else {
       // Контрольные суммы не совпали — ошибка
@@ -896,10 +908,12 @@ bot.on("message", async (msg) => {
             },
           }
         );
-        await collectionUser.updateOne(
-          { userId },
-          { $set: { address: "Самовывоз", processType: "select_time" } }
-        );
+        setTimeout(async () => {
+          await collectionUser.updateOne(
+            { userId },
+            { $set: { address: "Самовывоз", processType: "select_time" } }
+          );
+        }, 2000);
       } else if (text === "Отправить локацию") {
         await bot.sendMessage(
           chatId,
