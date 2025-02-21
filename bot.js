@@ -886,7 +886,7 @@ bot.on("message", async (msg) => {
           media: product.photo,
           caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(0, 6);
+        .slice(0, 10);
 
       await bot.sendMediaGroup(chatId, mediaGroup);
 
@@ -1318,7 +1318,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "tBD5xF7xi2tN2B7QqAO";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1355,7 +1355,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "tBD5xF7xi2tN2B7QqAO";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
