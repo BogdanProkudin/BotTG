@@ -450,7 +450,10 @@ bot.onText(/\/start/, async (msg) => {
       "_Спасибо, что выбрали нас!_",
     { parse_mode: "Markdown" }
   );
-
+  await bot.sendPhoto(
+    chatId,
+    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg"
+  );
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
     reply_markup: {
