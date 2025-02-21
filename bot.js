@@ -419,6 +419,7 @@ async function sendBufferImage(chatId, buffer) {
 }
 
 bot.onText(/\/noob/, async (msg) => {
+  const chatId = msg.chat.id;
   const imageUrl =
     "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg";
   const file_id =
