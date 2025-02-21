@@ -180,6 +180,9 @@ async function processPaymentNotification(req, res) {
           `📞 *Номер телефона получателя:* ${
             user.recipientNumber ? user.recipientNumber : "Не указан номер"
           }\n` +
+          `📞 *Номер телефона заказчика:* ${
+            user.clientNumber ? user.clientNumber : "Не указан номер"
+          }\n` +
           `📍 *Адрес доставки:* ${
             user.address ? user.address : "Не указан адрес"
           }\n` +
@@ -194,7 +197,16 @@ async function processPaymentNotification(req, res) {
           }\n\n`,
         {
           parse_mode: "Markdown",
+          reply_markup: {
+            keyboard: [["Вернуться в главное меню"]],
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
+          },
         }
+      );
+      await collectionUser.updateOne(
+        { userId: user.userId },
+        { $set: { processType: "finished" } }
       );
     } else {
       // Контрольные суммы не совпали — ошибка
@@ -548,8 +560,29 @@ bot.on("text", async (msg) => {
     return; // Игнорируем команды в группе
   }
   const user = await collectionUser.findOne({ userId });
-
-  if (text === "Назад") {
+  if (text === "Вернуться в главное меню" && user.processType === "finished") {
+    await collectionUser.updateOne(
+      { userId },
+      { $set: { isInProcess: false, processType: null } }
+    );
+    await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
+      reply_markup: {
+        keyboard: [
+          ["О нас", "Наш сайт"], // Кнопки в одном ряду
+          ["Мы на карте", "Онлайн-витрина"], // Кнопки во втором ряду
+          ["Наш каталог"], // Кнопка в третьем ряду
+        ],
+        resize_keyboard: true, // Делает кнопки компактными
+        one_time_keyboard: true, // Убирает клавиатуру после нажатия
+      },
+    });
+    await collectionUser.updateOne(
+      { userId },
+      { $set: { isInProcess: false, processType: null } }
+    );
+    return;
+  }
+  if (text === "Назад" && user.processType !== "finished") {
     if (
       (user && user.processType === "catalog_price=4000") ||
       (user && user.processType === "catalog_price=8000") ||
