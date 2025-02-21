@@ -5,6 +5,7 @@ import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
 import { getAvailableShippingTime } from "./avaliableShippingTime.js";
 import cors from "cors";
+import Readable from "stream";
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
