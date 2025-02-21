@@ -18,7 +18,7 @@ export function generateCalendar(year, month) {
       } else if (day > daysInMonth) {
         week.push({ text: " ", callback_data: "ignore" });
       } else {
-        const date = new Date(year, month, day);
+        const date = new Date(year, month, day + 1);
         const isPast = date < new Date();
         week.push({
           text: isPast ? `❌${day}` : `${day}`,

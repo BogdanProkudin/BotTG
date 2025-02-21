@@ -3,8 +3,10 @@ import { generateCalendar, getMonthName } from "./calendar.js";
 import { MongoClient } from "mongodb";
 import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
-
+import { getAvailableShippingTime } from "./avaliableShippingTime.js";
 import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 
 import crypto from "crypto";
@@ -17,15 +19,10 @@ import validateAddress, {
   getAddressFromCoordinates,
 } from "./validateAddress.js";
 import axios from "axios";
+
 // Вставьте токен вашего бота
-const BOT_TOKEN = "7067793712:AAG-q70twwvhpCN9M3a2_qAwmLfFXdZg32A";
+const BOT_TOKEN = process.env.BOT_TOKEN;
 const app = express();
-const config = {
-  shopIdentifier: "Florimnodi",
-  password1: "kNs2f8goXOWGY7AU0s2k",
-  password2: "pE4fu3bO2qglZCa3dI5T",
-  testMode: true, // Указываем true, если работаем в тестовом режиме
-};
 
 app.use(cors());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -89,7 +86,7 @@ async function processPaymentNotification(req, res) {
     console.log(req.body);
 
     // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-    const password2 = "xj5vgtK1YFw684pASrFj";
+    const password2 = "YuC5Vo27fxpNEnHV86cS";
     if (!collectionUser) {
       return;
     }
@@ -128,10 +125,31 @@ async function processPaymentNotification(req, res) {
       }
 
       // Отправляем ответ Robokassa для подтверждения получения уведомления
-      res.status(200).send(`OK${InvId}`);
+      await res.status(200).send(`OK${InvId}`);
       await bot.sendMessage(
         user.userId,
-        `Оплата успешно прошла! InvId: ${InvId}, Сумма: ${OutSum}, Email: ${EMail}`
+        `✅ *Оплата успешно прошла!*\n\n` +
+          `💰 *Цена:* ${user.price}\n` +
+          `📧 *Email:* ${EMail}\n` +
+          `📷 *Ссылка на фото:* [Открыть фото](${photoUrl})\n` +
+          `📞 *Номер телефона получателя:* ${
+            user.recipientNumber ? user.recipientNumber : "Не указан номер"
+          }\n` +
+          `📍 *Адрес доставки:* ${
+            user.address ? user.address : "Не указан адрес"
+          }\n` +
+          `📅 *Дата доставки:* ${
+            user.selectedDate ? user.selectedDate : "Не указана дата"
+          }\n` +
+          `⏰ *Время доставки/Удобное время для самовывоза:* ${
+            user.time ? user.time : "Не указано время"
+          }\n` +
+          `📝 *Дополнительная информация:* ${
+            user.extraInformation ? user.extraInformation : "Не указано"
+          }\n\n`,
+        {
+          parse_mode: "Markdown",
+        }
       );
       const response = await axios.get(
         `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${user.photo}`
@@ -162,10 +180,10 @@ async function processPaymentNotification(req, res) {
           }\n` +
           `📝 *Дополнительная информация:* ${
             user.extraInformation ? user.extraInformation : "Не указано"
-          }\n\n` +
-          {
-            parse_mode: "Markdown",
-          }
+          }\n\n`,
+        {
+          parse_mode: "Markdown",
+        }
       );
     } else {
       // Контрольные суммы не совпали — ошибка
@@ -311,39 +329,17 @@ function generatePaymentLink(
   );
 
   // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}&isTest=1`;
+  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}&isTest=0`;
 
   // Возвращаем ссылку
   return paymentLink;
 }
-bot.onText(/\/test/, (msg) => {
-  const chatId = msg.chat.id;
-  try {
-    // Пример значений
-    const merchantLogin = "Florimnodi";
-    const password1 = "kNs2f8goXOWGY7AU0s2k";
-    const invId = 0;
-    const description = "ТехническаядокументацияпоROBOKASSA";
-    const outSum = "8.96";
 
-    const paymentUrl = generatePaymentLink(
-      merchantLogin,
-      password1,
-      invId,
-      outSum
-    );
-    // Отправка ссылки пользователю
-    bot.sendMessage(chatId, `Нажмите на ссылку для оплаты: ${paymentUrl}`);
-  } catch (e) {
-    console.log(e);
-  }
-});
-
-bot.onText(/\/location/, (msg) => {
+bot.onText(/\/location/, async (msg) => {
   const chatId = msg.chat.id;
 
   // Отправляем кнопку для отправки местоположения
-  bot.sendMessage(chatId, "Пожалуйста, отправьте свое местоположение", {
+  await bot.sendMessage(chatId, "Пожалуйста, отправьте свое местоположение", {
     reply_markup: {
       keyboard: [
         [
@@ -370,6 +366,7 @@ bot.on("location", async (msg) => {
     return;
   }
   if (user.processType === "send_location") {
+    const availableTimes = await getAvailableShippingTime(user);
     const address = await getAddressFromCoordinates(latitude, longitude);
     if (
       address !==
@@ -381,11 +378,7 @@ bot.on("location", async (msg) => {
         `Ваш адрес: ${address}\n` + "Теперь укажите примерное время доставки",
         {
           reply_markup: {
-            keyboard: [
-              ["9-11", "12-14"],
-              ["15-17", "18-20", "20-21"],
-              ["Назад"],
-            ],
+            keyboard: [...availableTimes, ["Назад"]],
             resize_keyboard: true,
             one_time_keyboard: true,
           },
@@ -547,16 +540,22 @@ bot.on("text", async (msg) => {
   if (text === "Назад") {
     if (
       (user && user.processType === "catalog_price=4000") ||
-      user.processType === "catalog_price=8000" ||
-      user.processType === "catalog_price=15000"
+      (user && user.processType === "catalog_price=8000") ||
+      (user && user.processType === "catalog_price=10000") ||
+      (user && user.processType === "catalog_price=10000++")
     ) {
       const message = await cancelProcess(userId, collectionUser);
+      await bot.deleteMessage(chatId, user.message_to_delete);
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { message_to_delete: null } }
+      );
       await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
-            ["До 4.000₽"],
-            ["4.0000₽-8.000₽"],
-            ["8.000₽-15.000₽"],
+            ["До 4.000₽", "4.0000₽-7.000₽"],
+
+            ["7.000₽-10.000₽", "10.000₽ и дороже"],
             ["Назад"],
           ],
           resize_keyboard: true,
@@ -587,6 +586,45 @@ bot.on("text", async (msg) => {
       });
       return;
     }
+    if (user && user.processType && user.processType === "who_is_client") {
+      const message = await cancelProcess(userId, collectionUser);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
+    if (user && user.processType && user.processType === "client_number") {
+      const message = await cancelProcess(userId, collectionUser);
+      const availableTimes = getAvailableShippingTime(user);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [...availableTimes, ["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
+    if (
+      user &&
+      user.processType &&
+      user.processType === "recipient_number" &&
+      user.whoIsClient === "Другой человек"
+    ) {
+      const message = await cancelProcess(userId, collectionUser);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["Я", "Другой человек"], ["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
     if (
       user &&
       user.processType &&
@@ -598,7 +636,7 @@ bot.on("text", async (msg) => {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
-          keyboard: [["9-11", "12-14"], ["15-17", "18-20", "20-21"], ["Назад"]],
+          keyboard: [["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
@@ -606,11 +644,16 @@ bot.on("text", async (msg) => {
       return;
     }
 
-    if (user && user.processType && user.processType === "extra_information") {
+    if (
+      user &&
+      user.processType &&
+      user.processType === "extra_information" &&
+      user.whoIsClient === "Я"
+    ) {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
-          keyboard: [["Назад"]],
+          keyboard: [["Я", "Другой человек"], ["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
@@ -624,16 +667,33 @@ bot.on("text", async (msg) => {
       user.address !== "Самовывоз"
     ) {
       const message = await cancelProcess(userId, collectionUser);
+      const availableTimes = getAvailableShippingTime(user);
+
       await bot.sendMessage(chatId, message, {
         reply_markup: {
-          keyboard: [["9-11", "12-14"], ["15-17", "18-20", "20-21"], ["Назад"]],
+          keyboard: [...availableTimes, ["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
       });
       return;
     }
-
+    if (
+      user &&
+      user.processType &&
+      user.processType === "extra_information" &&
+      (user.whoIsClient === "Другой человек" || user.whoIsClient === "Я")
+    ) {
+      const message = await cancelProcess(userId, collectionUser);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
     if (
       (user && user.processType && user.processType === "send_location") ||
       (user && user.processType && user.processType === "enter_address") ||
@@ -799,6 +859,8 @@ bot.on("message", async (msg) => {
       user.processType !== "catalog_price=4000" &&
       user.processType !== "catalog_price=8000" &&
       user.processType !== "catalog_price=15000" &&
+      user.processType !== "client_number" &&
+      user.processType !== "who_is_client" &&
       user.processType !== "prepare_payment")
   ) {
     console.log("User is in process");
@@ -807,7 +869,7 @@ bot.on("message", async (msg) => {
   }
 
   try {
-    if (text === "Онлайн-витрина") {
+    if (text === "Онлайн-витрина" && !user.isInProcess) {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
@@ -887,19 +949,27 @@ bot.on("message", async (msg) => {
       const month = now.getMonth();
 
       const calendar = generateCalendar(year, month);
-
-      bot.sendMessage(
+      await bot.sendMessage(chatId, "Букет выбран!", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+        },
+      });
+      await bot.sendMessage(
         chatId,
-        "Пожалуйста, выберите удобную вам дату:          ",
+        "📅Пожалуйста, выберите удобную вам дату:          ",
         {
           reply_markup: {
             inline_keyboard: calendar,
+
+            resize_keyboard: true,
           },
         }
       );
     } else if (user.processType === "prepare_address") {
-      // Сохранение адреса
       if (text === "Самовывоз") {
+        const availableTimes = getAvailableShippingTime(user);
+        console.log(availableTimes[0][0]);
+
         await bot.sendMessage(
           chatId,
           "🕒 *Укажите примерное время, когда вы заберёте товар.*\n\n" +
@@ -907,11 +977,7 @@ bot.on("message", async (msg) => {
           {
             parse_mode: "Markdown",
             reply_markup: {
-              keyboard: [
-                ["9-11", "12-14"],
-                ["15-17", "18-20", "20-21"],
-                ["Назад"],
-              ],
+              keyboard: [...availableTimes, ["Назад"]],
               resize_keyboard: true,
               one_time_keyboard: true,
             },
@@ -922,7 +988,7 @@ bot.on("message", async (msg) => {
             { userId },
             { $set: { address: "Самовывоз", processType: "select_time" } }
           );
-        }, 2000);
+        }, 700);
       } else if (text === "Отправить локацию") {
         await bot.sendMessage(
           chatId,
@@ -984,17 +1050,15 @@ bot.on("message", async (msg) => {
       console.log(validationResponse.message, validationResponse.valid);
 
       if (validationResponse.valid) {
+        const availableTimes = getAvailableShippingTime(user);
+
         await bot.sendMessage(
           chatId,
           "📍 **Адрес найден!**\n\nТеперь, пожалуйста, укажите удобное время доставки. ⏰",
           {
             parse_mode: "Markdown",
             reply_markup: {
-              keyboard: [
-                ["9-11", "12-14"],
-                ["15-17", "18-20", "20-21"],
-                ["Назад"],
-              ],
+              keyboard: [...availableTimes, ["Назад"]],
               resize_keyboard: true,
               one_time_keyboard: true,
             },
@@ -1020,15 +1084,36 @@ bot.on("message", async (msg) => {
       }
 
       // Обновление статуса пользователя в процессе
-    } else if (user.processType === "select_time" && text !== "Назад") {
+    } else if (
+      (user.processType === "select_time" && text === "9-11") ||
+      (user.processType === "select_time" && text === "12-14") ||
+      (user.processType === "select_time" && text === "15-17") ||
+      (user.processType === "select_time" && text === "18-20") ||
+      (user.processType === "select_time" &&
+        text === "20-21" &&
+        user.processType === "select_time" &&
+        text !== "Назад")
+    ) {
+      console.log(getAvailableShippingTime(user)[0][0], "zzzww");
+
+      if (
+        getAvailableShippingTime(user)[0][0] ===
+        "К сожалению, на этот день доставка недоступна."
+      ) {
+        console.log("can nto");
+
+        return;
+      }
       if (user.address === "Самовывоз") {
+        console.log(getAvailableShippingTime(user)[0][0], "zzw");
+
         await bot.sendMessage(
           chatId,
-          "⏰ **Время доставки выбрано.**\n\nТеперь, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
+          "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите ваш номер телефона. 📞",
           {
             parse_mode: "Markdown",
             reply_markup: {
-              keyboard: [["Перейти к оплате"], ["Назад"]],
+              keyboard: [["Назад"]],
               resize_keyboard: true,
               one_time_keyboard: true,
             },
@@ -1036,14 +1121,14 @@ bot.on("message", async (msg) => {
         );
         await collectionUser.updateOne(
           { userId },
-          { $set: { time: text, processType: "extra_information" } }
+          { $set: { time: text, processType: "client_number" } }
         );
         return;
       }
 
       await bot.sendMessage(
         chatId,
-        "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите номер телефона получателя. 📞",
+        "⏰ **Время доставки выбрано.**\n\nТеперь, пожалуйста, укажите ваш номер телефона. 📞",
         {
           parse_mode: "Markdown",
           reply_markup: {
@@ -1059,10 +1144,117 @@ bot.on("message", async (msg) => {
         {
           $set: {
             time: text,
-            processType: "recipient_number",
+            processType: "client_number",
           },
         }
       );
+    } else if (user.processType === "client_number" && text !== "Назад") {
+      const phoneRegex =
+        /^(\+7|8)\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}$/;
+      if (!phoneRegex.test(text)) {
+        await bot.sendMessage(
+          chatId,
+          "❌ **Неверный формат номера телефона.**\n\nПожалуйста, проверьте введенные данные и попробуйте еще раз. 📞",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+        return;
+      }
+      if (user.address === "Самовывоз") {
+        await bot.sendMessage(
+          chatId,
+          "📱Ваш номер телефона успешно сохранен. \n\nСейчас, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Перейти к оплате"], ["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+      } else {
+        await bot.sendMessage(
+          chatId,
+          "📱Ваш номер телефона успешно сохранен. \n\nТеперь, укажите кто получит заказ \n1️⃣  Я\n2️⃣ Другой человек\n\n📱 Пожалуйста, выберите один из вариантов. ",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Я", "Другой человек"], ["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+      }
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            clientNumber: text,
+            processType:
+              user.address === "Самовывоз"
+                ? "extra_information"
+                : "who_is_client",
+          },
+        }
+      );
+    } else if (
+      user.processType === "who_is_client" &&
+      text !== "Назад" &&
+      user.address !== "Самовывоз"
+    ) {
+      if (text === "Я") {
+        await bot.sendMessage(
+          chatId,
+          "📱Вы указали себя как получателя. \n\nСейчас, при желании вы можете указать дополнительную информацию или перейти к оплате. 📞",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [["Перейти к оплате"], ["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+        await collectionUser.updateOne(
+          { userId },
+          {
+            $set: {
+              whoIsClient: text,
+              processType: "extra_information",
+            },
+          }
+        );
+      } else if (text === "Другой человек") {
+        await bot.sendMessage(
+          chatId,
+          "📱Вы указали другого человека как получателя. \n\nУкажите номер телефона этого человека 📞",
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [[""], ["Назад"]],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+        await collectionUser.updateOne(
+          { userId },
+          {
+            $set: {
+              whoIsClient: text,
+              processType: "recipient_number",
+            },
+          }
+        );
+      }
     } else if (user.processType === "recipient_number" && text !== "Назад") {
       const phoneRegex =
         /^(\+7|8)\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2}$/;
@@ -1085,7 +1277,7 @@ bot.on("message", async (msg) => {
 
       await bot.sendMessage(
         chatId,
-        "📱 Номер телефона получателя успешно выбран. \n\nТеперь, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
+        "📱 Номер телефона получателя успешно выбран. \n\nСейчас, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
         {
           parse_mode: "Markdown",
           reply_markup: {
@@ -1126,7 +1318,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const password1 = "tBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1157,9 +1349,13 @@ bot.on("message", async (msg) => {
           },
         }
       );
-    } else if (user.processType === "prepare_payment" && text !== "Назад") {
+    } else if (
+      user.processType === "prepare_payment" &&
+      text === "Перейти к оплате" &&
+      text !== "Назад"
+    ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "kNs2f8goXOWGY7AU0s2k";
+      const password1 = "tBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1203,34 +1399,36 @@ bot.on("message", async (msg) => {
 });
 
 bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const userId = msg.from.id;
-  const text = msg.text;
-  if (!collectionUser) {
-    return;
-  }
-  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
-  if (chatType === "supergroup") {
-    return; // Игнорируем команды в группе
-  }
-  const user = await collectionUser.findOne({ userId });
-  if (
-    user &&
-    user.isInProcess &&
-    user.processType !== "about" &&
-    user.processType !== "site" &&
-    user.processType !== "catalog" &&
-    user.processType !== "catalog_price=4000" &&
-    user.processType !== "catalog_price=8000" &&
-    user.processType !== "catalog_price=15000"
-  ) {
-    return;
-  } else if (text === "О нас") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "about" } }
-    );
-    const text = `
+  try {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const text = msg.text;
+    if (!collectionUser) {
+      return;
+    }
+    const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+    if (chatType === "supergroup") {
+      return; // Игнорируем команды в группе
+    }
+    const user = await collectionUser.findOne({ userId });
+    if (
+      user &&
+      user.isInProcess &&
+      user.processType !== "about" &&
+      user.processType !== "site" &&
+      user.processType !== "catalog" &&
+      user.processType !== "catalog_price=4000" &&
+      user.processType !== "catalog_price=8000" &&
+      user.processType !== "catalog_price=15000" &&
+      user.processType !== "map"
+    ) {
+      return;
+    } else if (text === "О нас") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "about" } }
+      );
+      const text = `
 ✨ Flori Mondi – ваш премиальный цветочный салон с безупречным сервисом, быстрыми доставками и роскошным бутиком в самом сердце Москвы. 
 
 🌷 Мы создаем не просто букеты, а моменты счастья, где каждый лепесток пропитан заботой. Наши флористы сделали всё, чтобы процесс заказа стал максимально удобным и приятным для вас. 
@@ -1241,84 +1439,120 @@ bot.on("message", async (msg) => {
 
 🌟 Мы здесь, чтобы создавать радость для вас и ваших близких.
 `;
-    await bot.sendMessage(chatId, text, {
-      reply_markup: {
-        keyboard: [["Назад"]],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
-  } else if (text === "Наш сайт") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "site" } }
-    );
+      await bot.sendMessage(chatId, text, {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+    } else if (text === "Наш сайт") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "site" } }
+      );
 
-    await bot.sendMessage(chatId, "www.florimondi.ru/about/", {
-      reply_markup: {
-        keyboard: [["Назад"]],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
-  } else if (text === "Наш каталог") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "catalog" } }
-    );
-    await bot.sendMessage(chatId, "Выберете диапазон цен ", {
-      reply_markup: {
-        keyboard: [
-          ["До 4.000₽"],
-          ["4.0000₽-8.000₽"],
-          ["8.000₽-15.000₽"],
-          ["Назад"],
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
-  }
-  if (text === "До 4.000₽" && user.processType === "catalog") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "catalog_price=4000" } }
-    );
+      await bot.sendMessage(chatId, "www.florimondi.ru/about/", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+    } else if (text === "Наш каталог") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "catalog" } }
+      );
+      await bot.sendMessage(chatId, "Выберете диапазон цен ", {
+        reply_markup: {
+          keyboard: [
+            ["До 4.000₽", "4.0000₽-7.000₽"],
 
-    await bot.sendMessage(chatId, "Вы выбрали диапазон: До 4.000₽", {
-      reply_markup: {
-        keyboard: [["Назад"]],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
-    await sendSlide(chatId, 0);
-  }
-  if (text === "4.0000₽-8.000₽" && user.processType === "catalog") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "catalog_price=8000" } }
-    );
-    await bot.sendMessage(chatId, "Вы выбрали диапазон: 4.0000₽-8.000₽", {
-      reply_markup: {
-        keyboard: [["Назад"]],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
-  }
-  if (text === "8.000₽-15.000₽" && user.processType === "catalog") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: true, processType: "catalog_price=15000" } }
-    );
-    await bot.sendMessage(chatId, "Вы выбрали диапазон: 8.000₽-15.000₽", {
-      reply_markup: {
-        keyboard: [["Назад"]],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
+            ["7.000₽-10.000₽", "10.000₽ и дороже"],
+
+            ["Назад"],
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+    } else if (text === "Мы на карте") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "map" } }
+      );
+      await bot.sendLocation(chatId, 55.743139, 37.633583);
+      await bot.sendMessage(
+        chatId,
+        "Москва, Руновский переулок 8, строение 1",
+        {
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+    }
+    if (text === "До 4.000₽" && user.processType === "catalog") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "catalog_price=4000" } }
+      );
+
+      await bot.sendMessage(chatId, "Вы выбрали диапазон: До 4.000₽", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      await sendSlide(chatId, 0);
+    }
+    if (text === "4.0000₽-7.000₽" && user.processType === "catalog") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "catalog_price=8000" } }
+      );
+      await bot.sendMessage(chatId, "Вы выбрали диапазон: 4.0000₽-7.000₽", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      await sendSlide(chatId, 0);
+    }
+    if (text === "7.000₽-10.000₽" && user.processType === "catalog") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "catalog_price=10000" } }
+      );
+      await bot.sendMessage(chatId, "Вы выбрали диапазон: 7.000₽-10.000₽", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      await sendSlide(chatId, 0);
+    } else if (text === "10.000₽ и дороже" && user.processType === "catalog") {
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: true, processType: "catalog_price=10000++" } }
+      );
+      await bot.sendMessage(chatId, "Вы выбрали диапазон: 10.000₽ и дороже", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      await sendSlide(chatId, 0);
+    }
+  } catch (error) {
+    console.error("Ошибка при обработке текстового сообщения:", error);
   }
 });
 
@@ -1327,141 +1561,344 @@ bot.on("message", async (msg) => {
 // Функция для создания календаря
 
 bot.on("callback_query", async (query) => {
-  if (!collectionUser) {
-    return;
-  }
-  const chatId = query.message.chat.id;
-  const callback_data = query.data;
-  const user = await collectionUser.findOne({ userId: query.from.id });
-  if (user.processType === "catalog_price=4000") {
-    console.log(chatId);
-
-    // Получаем текущий индекс из callback_data
-    const data = query.data.split("_");
-    const action = data[0];
-    console.log(query.data, "data");
-
-    const slideIndex = parseInt(data[1]);
-    console.log(slideIndex, action);
-
-    if (action === "prev" && slideIndex > -1) {
-      // Переход на предыдущий слайд
-      await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-      await sendSlide(chatId, slideIndex - 1);
-    } else if (action === "next" && slideIndex < slides.length - 1) {
-      // Переход на следующий слайд
-      await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-      await sendSlide(chatId, slideIndex + 1);
-    } else if (action === "disable") {
-      await bot.answerCallbackQuery(query.id, {
-        text: "Нет доступных действий.",
-        show_alert: false,
-      });
+  try {
+    if (!collectionUser) {
+      return;
     }
-  } else if (
-    callback_data.startsWith("date_") ||
-    callback_data.startsWith("prev_") ||
-    callback_data.startsWith("next_") ||
-    callback_data === "ignore"
-  ) {
-    // const chatId = query.message.chat.id;
-    // const data = callbackQuery.data;
+    const chatId = query.message.chat.id;
+    const callback_data = query.data;
+    console.log("callback_data", callback_data);
 
-    if (callback_data.startsWith("date_")) {
-      const date = callback_data.split("_")[1];
-      await bot.sendMessage(
-        chatId,
-        `Вы выбрали дату: *${date}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
-          `1️⃣ *Через локацию:* Нажмите кнопку "Отправить локацию" для отправки своего местоположения.\n` +
-          `(Для отправки локации необходимо, чтобы у вас был телефон и включено разрешение на доступ к местоположению в Telegram.)\n\n` +
-          `2️⃣ *Через текст:* Введите ваш адрес в формате: *Город, Улица, Дом* (например: Москва, Тверская улица, 7). \n` +
-          `На данный момент мы работаем только в Москве.\n\n` +
-          `3️⃣ *Самовывоз*: Вы можете забрать товар самостоятельно с нашего магазина по адресу Москва, Тверская улица, 7.\n` +
-          `Для выбора этой опции нажмите "Самовывоз", и вы сможете выбрать удобное время для самовывоза.\n\n` +
-          `ℹ️ *Обратите внимание:* Мы осуществляем доставку и самовывоз только в Москве.`,
-        {
-          parse_mode: "Markdown",
-          reply_markup: {
-            keyboard: [
-              [{ text: "Отправить локацию" }],
-              ["Ввести адрес", "Самовывоз"],
-              ["Назад"],
-            ],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
-        }
-      );
+    const user = await collectionUser.findOne({ userId: query.from.id });
+    if (user.processType === "catalog_price=10000++") {
+      console.log(chatId);
 
-      bot.deleteMessage(chatId, query.message.message_id);
-      await collectionUser.updateOne(
-        { userId: chatId },
-        { $set: { selectedDate: date, processType: "prepare_address" } }
-      );
-    } else if (
-      callback_data.startsWith("prev_") ||
-      callback_data.startsWith("next_")
+      const data = query.data.split("_");
+      const action = data[0];
+      console.log(query.data, "data");
+
+      const slideIndex = parseInt(data[1]);
+      console.log(slideIndex, action);
+
+      if (action === "prev" && slideIndex > 0) {
+        await bot.deleteMessage(chatId, query.message.message_id);
+        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
+      } else if (
+        action === "next" &&
+        slideIndex < slidesFor10moreK.length - 1
+      ) {
+        await bot.deleteMessage(chatId, query.message.message_id);
+        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
+      } else if (action === "disable") {
+        await bot.answerCallbackQuery(query.id, {
+          text: "Нет доступных действий.",
+          show_alert: false,
+        });
+      }
+    }
+    if (user.processType === "catalog_price=10000") {
+      console.log(chatId);
+
+      const data = query.data.split("_");
+      const action = data[0];
+      console.log(query.data, "data");
+
+      const slideIndex = parseInt(data[1]);
+      console.log(slideIndex, action);
+
+      if (action === "prev" && slideIndex > 0) {
+        await bot.deleteMessage(chatId, query.message.message_id);
+        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
+      } else if (action === "next" && slideIndex < slidesFor10k.length - 1) {
+        await bot.deleteMessage(chatId, query.message.message_id);
+        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
+      } else if (action === "disable") {
+        await bot.answerCallbackQuery(query.id, {
+          text: "Нет доступных действий.",
+          show_alert: false,
+        });
+      }
+    }
+    if (
+      user.processType === "catalog_price=4000" ||
+      user.processType === "catalog_price=8000"
     ) {
-      const [action, year, month] = callback_data.split("_");
-      let newYear = parseInt(year);
-      let newMonth = parseInt(month);
+      console.log(chatId);
 
-      if (action === "prev") {
-        newMonth -= 1;
-        if (newMonth < 0) {
-          newMonth = 11;
-          newYear -= 1;
+      // Получаем текущий индекс из callback_data
+      const data = query.data.split("_");
+      const action = data[0];
+      console.log(query.data, "data");
+
+      const slideIndex = parseInt(data[1]);
+      console.log(slideIndex, action);
+
+      if (action === "prev" && slideIndex > -1) {
+        // Переход на предыдущий слайд
+        await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
+        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
+      } else if (action === "next" && slideIndex < slidesFor4k.length - 1) {
+        // Переход на следующий слайд
+        await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
+        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
+      } else if (action === "disable") {
+        await bot.answerCallbackQuery(query.id, {
+          text: "Нет доступных действий.",
+          show_alert: false,
+        });
+      }
+    } else if (
+      callback_data.startsWith("date_") ||
+      callback_data.startsWith("prev_") ||
+      callback_data.startsWith("next_") ||
+      callback_data === "ignore"
+    ) {
+      // const chatId = query.message.chat.id;
+      // const data = callbackQuery.data;
+
+      if (callback_data.startsWith("date_")) {
+        const rawDate = callback_data.split("_")[1]; // "2025-02-06"
+
+        // Разбиваем на год, месяц, день
+        const [year, month, day] = rawDate.split("-");
+
+        // Форматируем в DD.MM.YYYY
+        const formattedDate = `${day}.${month}.${year}`;
+
+        await bot.sendMessage(
+          chatId,
+          `Вы выбрали дату: *${formattedDate}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
+            `1️⃣ *Через локацию:* Нажмите кнопку "Отправить локацию" для отправки своего местоположения.\n` +
+            `(Для отправки локации необходимо, чтобы у вас был телефон и включено разрешение на доступ к местоположению в Telegram.)\n\n` +
+            `2️⃣ *Через текст:* Введите ваш адрес в формате: *Город, Улица, Дом* (например: Москва, Тверская улица, 7). \n` +
+            `На данный момент мы работаем только в Москве.\n\n` +
+            `3️⃣ *Самовывоз*: Вы можете забрать товар самостоятельно с нашего магазина по адресу Москва, Тверская улица, 7.\n` +
+            `Для выбора этой опции нажмите "Самовывоз", и вы сможете выбрать удобное время для самовывоза.\n\n` +
+            `ℹ️ *Обратите внимание:* Мы осуществляем доставку и самовывоз только в Москве.`,
+          {
+            parse_mode: "Markdown",
+            reply_markup: {
+              keyboard: [
+                [{ text: "Отправить локацию" }],
+                ["Ввести адрес", "Самовывоз"],
+                ["Назад"],
+              ],
+              resize_keyboard: true,
+              one_time_keyboard: true,
+            },
+          }
+        );
+
+        bot.deleteMessage(chatId, query.message.message_id);
+        await collectionUser.updateOne(
+          { userId: chatId },
+          {
+            $set: {
+              selectedDate: formattedDate,
+              processType: "prepare_address",
+            },
+          }
+        );
+      } else if (
+        callback_data.startsWith("prev_") ||
+        callback_data.startsWith("next_")
+      ) {
+        const [action, year, month] = callback_data.split("_");
+        let newYear = parseInt(year);
+        let newMonth = parseInt(month);
+
+        if (action === "prev") {
+          newMonth -= 1;
+          if (newMonth < 0) {
+            newMonth = 11;
+            newYear -= 1;
+          }
+        } else if (action === "next") {
+          newMonth += 1;
+          if (newMonth > 11) {
+            newMonth = 0;
+            newYear += 1;
+          }
         }
-      } else if (action === "next") {
-        newMonth += 1;
-        if (newMonth > 11) {
-          newMonth = 0;
-          newYear += 1;
-        }
+
+        const calendar = generateCalendar(newYear, newMonth);
+
+        await bot.editMessageReplyMarkup(
+          {
+            inline_keyboard: calendar,
+          },
+
+          {
+            chat_id: chatId,
+            message_id: query.message.message_id,
+          }
+        );
+      } else if (callback_data === "ignore") {
+        bot.answerCallbackQuery(query.id, {
+          text: "Эта дата недоступна для выбора.",
+        });
       }
 
-      const calendar = generateCalendar(newYear, newMonth);
-
-      await bot.editMessageReplyMarkup(
-        { inline_keyboard: calendar },
-        {
-          chat_id: chatId,
-          message_id: query.message.message_id,
-        }
-      );
-    } else if (callback_data === "ignore") {
-      bot.answerCallbackQuery(query.id, {
-        text: "Эта дата недоступна для выбора.",
-      });
+      // Отправляем запрос на ввод адреса
     }
-
-    // Отправляем запрос на ввод адреса
+  } catch (e) {
+    console.log(e);
   }
 });
-const slides = [
+const slidesFor4k = [
   {
     photo:
-      "https://cdn.myshoptet.com/usr/www.teto.cz/user/shop/big/12294_number-1.jpg?5fe1b011",
-    caption: "Описание для фото 1",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/976/0e7kl2ypajff6n6bbr00xwzvdy53jjtw.webp",
+    caption:
+      "✨ Шляпная коробочка с садовой розой и маттиолой – изысканный подарок с утонченным ароматом.\n💰 Цена: 3 990 ₽",
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-sadovoy-rozoy-i-mattioloy/",
   },
   {
-    photo: "https://cdn-icons-png.flaticon.com/512/6422/6422821.png",
-    caption: "Описание для фото 2",
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/862/basmqp4iaggkp3kk0qdssbnogdwoezbm.webp",
+    caption:
+      '🌸 Букет "Эйфория" – роскошное сочетание гортензии, лизиантуса и кустовой пионовидной розы.\n💰 Цена: 3 990 ₽',
+    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/buket-eyforiya-s-gortenziey-liziantusom-i-kustovoy-pionovidnoy-rozoy/",
   },
   {
-    photo: "https://roflmagnets.com/306-medium_default/number-3.jpg",
-    caption: "Описание для фото 3",
+    photo:
+      "https://florimondi.ru/upload/iblock/f9e/pmmymh8ljo5e60498ld4d8mqh7zhgd3g.JPG",
+    caption:
+      '💜 Авторский букет "Лавандовый раф" – утонченность в каждом лепестке.\n💰 Цена: 3 990 ₽',
+    url: "https://florimondi.ru/catalog/online-vitrina/avtorskiy-buket-lavandovyy-raf/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/e99/bx0jh2y24lz4vo2a9wpijuuv9tis5lye.webp",
+    caption:
+      '🌷 Букет "Фламинго" – нежность и воздушность кустовой пионовидной розы.\n💰 Цена: 3 990 ₽',
+    url: "https://florimondi.ru/catalog/srednij-buket-cvetov/buket-flamingo-iz-/",
   },
 ];
-function sendSlide(chatId, slideIndex) {
-  const slide = slides[slideIndex];
 
-  // Inline-кнопки для навигации
+const slidesFor7k = [
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/a06/t38kfaf1f2joeid19rble70jyvuikx1w.webp",
+    caption:
+      '💖 Авторский букет с садовой розой "Любимчик" – утонченное сочетание оттенков и свежести.\n💰 Цена: 4 890 ₽',
+    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/avtorskiy-buket-s-sadovoy-rozoy-lyubimchik/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/iblock/055/7yfbd1rxt85plwsbher9j1m1q5en174m.JPG",
+    caption:
+      "🌿 Нежный раскидистый букет с кустовой пионовидной розой – легкость и воздушность.\n💰 *Цена уточняется*",
+    url: "",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/478/430h0vfr3xl1pry2phw4owwbowlm2tis.webp",
+    caption:
+      '🌷 Шляпная коробка "Французский сад" – стильный подарок для ценителей красоты.\n💰 Цена: 4 590 ₽',
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobka-frantsuzskiy-sad/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/iblock/90e/qm7r4957t45ru326m2w795v5t5wjtfda.JPG",
+    caption:
+      "🌸 Букет из кустовых пионовидных роз и диантусов – гармония нежности и свежести.\n💰 Цена: 5 590 ₽",
+    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/buket-iz-kustovykh-pionovidnykh-roz-i-diantusov/",
+  },
+];
 
-  // Деактивация кнопки "Назад" на первом слайде
-  const keyboard = {
+const slidesFor10k = [
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/236/wwg8x82p8624r9i2dydmcq9np2dnmd92.webp",
+    caption: `🌺 Монобукет из 25 кустовых пионовидных роз – утонченность и элегантность в каждом бутоне! ✨ \n💰 Цена: 9 990 ₽`,
+    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/monobuket-iz-25-kustovykh-pionovidnykh-roz/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/09c/aqhp6bfvki9eazk4xvwyrpexthc0873g.webp",
+    caption: `🌸 Яркий букет с нежной сиренью и коробочка макарунс – идеальный подарок для создания атмосферы уюта! ☕\n💰 Цена: 6 990 ₽`,
+    url: "https://florimondi.ru/catalog/bukety-k-14-fevralya/yarkiy-buket-s-sirenyu-i-korobochka-makaruns/",
+  },
+];
+
+const slidesFor10moreK = [
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/2a9/iyf8gsl6fyovj4e62bdur6uu4grzfzop.webp",
+    caption:
+      "🌸 Элегантная корзина с садовыми розами в нежных пастельных тонах, дополненная изысканными конфетами. \n💰 Цена: 15 590 ₽",
+    url: "https://florimondi.ru/catalog/podarochnye-nabory/korzina-s-sadovymi-rozami-v-nezhnykh-tonakh-i-konfety/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/68b/il4l0epii1muy4es9jniac9lg6lekfrv.webp",
+    caption:
+      "💐 Большой воздушный букет из нежных гортензий и кустовых роз, создающий атмосферу утончённости и лёгкости. \n💰 Цена: 10 990 ₽",
+    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/vozdushnyy-buket-iz-gortenziy-i-kustovykh-roz/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/567/kiax6ibfjpk51pl68xlcm2nhr6s6znml.webp",
+    caption:
+      '🎁 Подарочный набор "Моей любимой" — роскошное сочетание цветов и изысканных угощений для особенного случая. \n💰 Цена: 16 890 ₽',
+    url: "https://florimondi.ru/catalog/bukety-k-14-fevralya/podarochnyy-nabor-moey-lyubimoy/",
+  },
+];
+
+async function sendSlide(chatId, slideIndex, message_id) {
+  const user = await collectionUser.findOne({ userId: chatId });
+  if (!user) {
+    return;
+  }
+  const keyboardFor10moreK = {
     inline_keyboard: [
-      [{ text: "Купить", callback_data: `buy_${slideIndex}` }],
+      [
+        slidesFor10moreK[slideIndex]?.url
+          ? { text: "Купить", url: slidesFor10moreK[slideIndex].url }
+          : { text: "Купить", callback_data: "disable" },
+      ],
+      [
+        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
+        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
+      ],
+    ],
+  };
+  // Inline-кнопки для навигации
+  const keyboardFor10k = {
+    inline_keyboard: [
+      [
+        slidesFor10k[slideIndex]?.url
+          ? { text: "Купить", url: slidesFor10k[slideIndex].url } // Используем URL, если он есть
+          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
+      ],
+      [
+        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
+        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
+      ],
+    ],
+  };
+  // Деактивация кнопки "Назад" на первом слайде
+  const keyboardFor7k = {
+    inline_keyboard: [
+      [
+        slidesFor7k[slideIndex]?.url
+          ? { text: "Купить", url: slidesFor7k[slideIndex].url } // Используем URL, если он есть
+          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
+      ],
+      [
+        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
+        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
+      ],
+    ],
+  };
+  const keyboardFor4k = {
+    inline_keyboard: [
+      [
+        slidesFor4k[slideIndex]?.url
+          ? { text: "Купить", url: slidesFor4k[slideIndex].url } // Используем URL, если он есть
+          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
+      ],
       [
         { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
         { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
@@ -1471,34 +1908,140 @@ function sendSlide(chatId, slideIndex) {
   if (slideIndex == 0) {
   }
   // Изменение кнопок в зависимости от текущего слайда
-  if (slideIndex === 0) {
-    keyboard.inline_keyboard[0][0] = {
+  if (slideIndex === 0 && user.processType === "catalog_price=4000") {
+    keyboardFor4k.inline_keyboard[0][0] = {
       text: "Купить",
       callback_data: `buy_${slideIndex}`,
+      url: slidesFor4k[slideIndex].url,
     };
-    keyboard.inline_keyboard[1][0] = {
+    keyboardFor4k.inline_keyboard[1][0] = {
       text: "⬅️ Назад",
       callback_data: `disable`,
     };
   }
-  if (slideIndex === slides.length - 2) {
-    keyboard.inline_keyboard[1][0] = {
+  if (slideIndex === 0 && user.processType === "catalog_price=8000") {
+    keyboardFor7k.inline_keyboard[0][0] = {
+      text: "Купить",
+      callback_data: `buy_${slideIndex}`,
+      url: slidesFor7k[slideIndex].url,
+    };
+    keyboardFor7k.inline_keyboard[1][0] = {
+      text: "⬅️ Назад",
+      callback_data: `disable`,
+    };
+  }
+  if (
+    slideIndex === slidesFor4k.length - 2 &&
+    user.processType === "catalog_price=4000"
+  ) {
+    keyboardFor4k.inline_keyboard[1][0] = {
       text: "⬅️ Назад",
       callback_data: `prev_${slideIndex}`,
     };
   }
-  if (slideIndex === slides.length - 1) {
-    keyboard.inline_keyboard[1][1] = {
+  if (
+    slideIndex === slidesFor7k.length - 2 &&
+    user.processType === "catalog_price=8000"
+  ) {
+    keyboardFor7k.inline_keyboard[1][0] = {
+      text: "⬅️ Назад",
+      callback_data: `prev_${slideIndex}`,
+    };
+  }
+  if (
+    slideIndex === slidesFor4k.length - 1 &&
+    user.processType === "catalog_price=4000"
+  ) {
+    keyboardFor4k.inline_keyboard[1][1] = {
       text: "Вперёд ➡️",
       callback_data: "disable",
     };
   }
+  if (
+    slideIndex === slidesFor7k.length - 1 &&
+    user.processType === "catalog_price=8000"
+  ) {
+    keyboardFor7k.inline_keyboard[1][1] = {
+      text: "Вперёд ➡️",
+      callback_data: "disable",
+    };
+  }
+  if (
+    slideIndex === slidesFor10k.length - 1 &&
+    user.processType === "catalog_price=10000"
+  ) {
+    keyboardFor10k.inline_keyboard[1][1] = {
+      text: "Вперёд ➡️",
+      callback_data: "disable",
+    };
+  }
+  if (
+    slideIndex === slidesFor10moreK.length - 1 &&
+    user.processType === "catalog_price=10000++"
+  ) {
+    keyboardFor10moreK.inline_keyboard[1][1] = {
+      text: "Вперёд ➡️",
+      callback_data: "disable",
+    };
+  }
+  if (user.processType === "catalog_price=4000") {
+    console.log(user.processType);
+
+    const slide = slidesFor4k[slideIndex];
+    const message = await bot.sendPhoto(chatId, slide.photo, {
+      caption: slide.caption,
+      reply_markup: keyboardFor4k,
+    });
+
+    await collectionUser.updateOne(
+      { userId: chatId },
+      { $set: { message_to_delete: message.message_id } },
+      {
+        new: true,
+      }
+    );
+  } else if (user.processType === "catalog_price=8000") {
+    const slide = slidesFor7k[slideIndex];
+    const message = await bot.sendPhoto(chatId, slide.photo, {
+      caption: slide.caption,
+      reply_markup: keyboardFor7k,
+    });
+    await collectionUser.updateOne(
+      { userId: chatId },
+      { $set: { message_to_delete: message.message_id } },
+      {
+        new: true,
+      }
+    );
+  } else if (user.processType === "catalog_price=10000") {
+    const slide = slidesFor10k[slideIndex];
+    const message = await bot.sendPhoto(chatId, slide.photo, {
+      caption: slide.caption,
+      reply_markup: keyboardFor10k,
+    });
+    await collectionUser.updateOne(
+      { userId: chatId },
+      { $set: { message_to_delete: message.message_id } },
+      {
+        new: true,
+      }
+    );
+  } else if (user.processType === "catalog_price=10000++") {
+    const slide = slidesFor10moreK[slideIndex];
+    const message = await bot.sendPhoto(chatId, slide.photo, {
+      caption: slide.caption,
+      reply_markup: keyboardFor10moreK,
+    });
+    await collectionUser.updateOne(
+      { userId: chatId },
+      { $set: { message_to_delete: message.message_id } },
+      {
+        new: true,
+      }
+    );
+  }
   // Отправляем сообщение с кнопками
-  bot.sendPhoto(chatId, slide.photo, {
-    caption: slide.caption,
-    reply_markup: keyboard,
-  });
 }
-app.listen(3000, () => {
+app.listen(3003, () => {
   console.log(`Сервер запущен на http://localhost:${3000}`);
 });

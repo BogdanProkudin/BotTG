@@ -33,8 +33,9 @@ export async function cancelProcess(userId, collectionUser) {
   const user = await collectionUser.findOne({ userId });
   if (
     (user && user.processType === "catalog_price=4000") ||
-    user.processType === "catalog_price=8000" ||
-    user.processType === "catalog_price=15000"
+    (user && user.processType === "catalog_price=8000") ||
+    (user && user.processType === "catalog_price=10000") ||
+    (user && user.processType === "catalog_price=10000++")
   ) {
     await collectionUser.updateOne(
       { userId },
@@ -70,21 +71,52 @@ export async function cancelProcess(userId, collectionUser) {
     );
     return "Вы вернулись в процесс ввода дополнительной информации.";
   }
+
   if (
     user &&
-    user.processType === "extra_information" &&
+    user.processType === "who_is_client" &&
     user.address !== "Самовывоз"
   ) {
     await collectionUser.updateOne(
       { userId },
       {
         $set: {
-          processType: "recipient_number",
-          recipientNumber: null,
+          processType: "client_number",
+          clientNumber: null,
         },
       }
     );
-    return "Вы вернулись в процесс ввода номера получателя.";
+    return "Вы вернулись в процесс ввода вашего номера телефона.";
+  }
+  if (
+    user &&
+    user.processType === "extra_information" &&
+    user.address !== "Самовывоз"
+  ) {
+    if (user.whoIsClient === "Я") {
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            processType: "who_is_client",
+            whoIsClient: null,
+          },
+        }
+      );
+      return "Вы вернулись в процесс выбора получателя.";
+    } else if (user.whoIsClient === "Другой человек") {
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            processType: "recipient_number",
+            recipientNumber: null,
+          },
+        }
+      );
+    }
+
+    return "Вы вернулись в процесс ввода номера телефона другого человека.";
   }
   if (
     user &&
@@ -95,12 +127,40 @@ export async function cancelProcess(userId, collectionUser) {
       { userId },
       {
         $set: {
-          processType: "select_time",
-          time: null,
+          processType: "client_number",
+          clientNumber: null,
         },
       }
     );
-    return "Вы вернулись в процесс выбора времени.";
+    return "Вы вернулись в процесс ввода вашего номера телефона.";
+  }
+  if (user && user.processType === "client_number") {
+    await collectionUser.updateOne(
+      { userId },
+      {
+        $set: {
+          processType: "select_time",
+          clientNumber: null,
+        },
+      }
+    );
+    return "Вы вернулись в процесс выбора удобного для вас времени.";
+  }
+  if (
+    user &&
+    user.processType === "recipient_number" &&
+    user.whoIsClient === "Другой человек"
+  ) {
+    await collectionUser.updateOne(
+      { userId },
+      {
+        $set: {
+          processType: "who_is_client",
+          whoIsClient: null,
+        },
+      }
+    );
+    return "Вы вернулись в процесс выбора получателя.";
   }
   if (user && user.processType === "recipient_number") {
     await collectionUser.updateOne(

@@ -1,7 +1,3 @@
-import crypto from "crypto";
-
-const SECRET = "Satira228"; // Секретный ключ
-
 export function encodeInvId(userId) {
   const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-значное случайное число
   const rawId = `${userId}${randomNum}`; // Конкатенация userId и randomNum

@@ -36,21 +36,26 @@ export default async function geocodeAddress(address) {
     // Проверка на точное совпадение
     const isHouse =
       result.featureMember[0].GeoObject.metaDataProperty.GeocoderMetaData.kind;
+
+    console.log(
+      result.featureMember[0].GeoObject.metaDataProperty.GeocoderMetaData
+    );
+
     if (
-      isHouse !== "house" &&
-      !result.featureMember[0].GeoObject.metaDataProperty.GeocoderMetaData.text.includes(
+      isHouse === "house" &&
+      result.featureMember[0].GeoObject.metaDataProperty.GeocoderMetaData.text.includes(
         "Москва"
       )
     ) {
       return {
-        valid: false,
-        message:
-          "К сожалению, мы не можем найти ваш адрес. Пожалуйста, убедитесь, что адрес находится в Москве и вы указываете точное местоположение.",
+        valid: true,
+        message: "Адрес корректен.",
       };
     } else {
       return {
-        valid: true,
-        message: "Адрес корректен.",
+        valid: false,
+        message:
+          "К сожалению, мы не можем найти ваш адрес. Пожалуйста, убедитесь, что адрес находится в Москве и вы указываете точное местоположение.",
       };
     }
   } catch (error) {
