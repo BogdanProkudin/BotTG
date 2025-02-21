@@ -145,7 +145,7 @@ async function processPaymentNotification(req, res) {
       const photoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`;
       console.log(photoUrl);
       await bot.sendMessage(
-        -1002294575683,
+        -1002291227368,
         `✅ *Оплата успешно прошла!*\n\n` +
           `💰 *Цена:* ${user.price}\n` +
           `📧 *Email:* ${EMail}\n` +
