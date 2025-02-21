@@ -5,7 +5,8 @@ import Robokaska from "robokassa";
 import { Calendar } from "telegram-inline-calendar";
 import { getAvailableShippingTime } from "./avaliableShippingTime.js";
 import cors from "cors";
-import Readable from "stream";
+import { Readable } from "stream";
+
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -406,6 +407,16 @@ bot.on("location", async (msg) => {
 
   //   bot.sendLocation(chatId, latitude, longitude);
 });
+async function sendBufferImage(chatId, buffer) {
+  const stream = new Readable({
+    read() {
+      this.push(buffer);
+      this.push(null); // Завершаем поток
+    },
+  });
+
+  await bot.sendPhoto(chatId, { source: stream });
+}
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   console.log(chatId, "chatId");
@@ -454,13 +465,10 @@ bot.onText(/\/start/, async (msg) => {
   const imageUrl =
     "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg";
   const imagePath = `./${chatId}.jpg`;
-  const response = await axios({
-    url: imageUrl,
-    responseType: "arraybuffer",
-  });
+  const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+  const buffer = Buffer.from(response.data);
 
-  const stream = Readable.from(response.data); // Преобразуем Buffer в поток
-  await bot.sendPhoto(chatId, { source: stream });
+  await sendBufferImage(chatId, buffer);
 
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
