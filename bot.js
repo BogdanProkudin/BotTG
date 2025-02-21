@@ -1318,7 +1318,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "mnVhyV7vb3nLt58fAyr3";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
@@ -1355,7 +1355,7 @@ bot.on("message", async (msg) => {
       text !== "Назад"
     ) {
       const merchantLogin = "Florimnodi";
-      const password1 = "mnVhyV7vb3nLt58fAyr3";
+      const password1 = "dtBD5xF7xi2tN2B7QqAO";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const outSum = await user.price;
