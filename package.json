@@ -16,6 +16,9 @@
     "telegraf": "^4.16.3",
     "telegram-inline-calendar": "^2.2.0"
   },
+  "scripts": {
+    "start": "nodemon bot.js"
+  },
   "devDependencies": {
     "@types/node-telegram-bot-api": "^0.64.7"
   }
