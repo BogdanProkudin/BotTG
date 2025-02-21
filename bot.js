@@ -450,10 +450,17 @@ bot.onText(/\/start/, async (msg) => {
       "_Спасибо, что выбрали нас!_",
     { parse_mode: "Markdown" }
   );
-  await bot.sendPhoto(
-    chatId,
-    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg"
-  );
+  const imageUrl =
+    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg";
+  const imagePath = `./${chatId}.jpg`;
+  const response = await axios({
+    url: imageUrl,
+    responseType: "arraybuffer",
+  });
+
+  fs.writeFileSync(imagePath, response.data);
+  await bot.sendPhoto(chatId, imagePath);
+
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
     reply_markup: {
@@ -466,6 +473,7 @@ bot.onText(/\/start/, async (msg) => {
       one_time_keyboard: true, // Убирает клавиатуру после нажатия
     },
   });
+  fs.unlinkSync(imagePath); // Удаляем временный файл
 });
 // Обработчик команды /add
 bot.onText(/\/add/, async (msg) => {
