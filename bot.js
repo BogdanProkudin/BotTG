@@ -417,6 +417,27 @@ async function sendBufferImage(chatId, buffer) {
 
   await bot.sendPhoto(chatId, { source: stream });
 }
+
+bot.onText(/\/noob/, async (msg) => {
+  const imageUrl =
+    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg";
+  const file_id =
+    "AgACAgIAAxkBAAMsZ7hMijU3fEdrNiqMrBQpr1kAAQIvAALm6TEbCd_BSYt1o3L4pQRsAQADAgADbQADNgQ";
+  const fileInfo = await bot.getFile(file_id);
+  const imagePath = `./${chatId}.jpg`;
+  const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
+  const buffer = Buffer.from(response.data);
+
+  // Сохраняем изображение локально (опционально)
+  fs.writeFileSync(imagePath, buffer);
+
+  // Отправляем изображение в другой чат
+  await bot.sendPhoto(targetChatId, buffer);
+
+  // Отправляем подтверждение пользователю
+  await bot.sendMessage(chatId, "Ваше фото было успешно переслано!");
+});
+
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   console.log(chatId, "chatId");
@@ -462,13 +483,6 @@ bot.onText(/\/start/, async (msg) => {
       "_Спасибо, что выбрали нас!_",
     { parse_mode: "Markdown" }
   );
-  const imageUrl =
-    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg";
-  const imagePath = `./${chatId}.jpg`;
-  const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
-  const buffer = Buffer.from(response.data);
-
-  await sendBufferImage(chatId, buffer);
 
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
