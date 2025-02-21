@@ -458,7 +458,8 @@ bot.onText(/\/start/, async (msg) => {
     responseType: "arraybuffer",
   });
 
-  console.log(response.data);
+  const stream = Readable.from(response.data); // Преобразуем Buffer в поток
+  await bot.sendPhoto(chatId, { source: stream });
 
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
