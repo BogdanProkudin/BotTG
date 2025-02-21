@@ -113,7 +113,9 @@ async function processPaymentNotification(req, res) {
       additionalParamsString
     );
     console.log(calculatedHash, SignatureValue);
-
+    if (!calculatedHash) {
+      return res.status(400).json({ message: "Bad request" });
+    }
     // Проверка, совпадает ли контрольная сумма
     if (calculatedHash.toUpperCase() === SignatureValue.toUpperCase()) {
       // Проверка тестового режима
