@@ -425,18 +425,19 @@ bot.onText(/\/noob/, async (msg) => {
   const file_id =
     "AgACAgIAAxkBAAMsZ7hMijU3fEdrNiqMrBQpr1kAAQIvAALm6TEbCd_BSYt1o3L4pQRsAQADAgADbQADNgQ";
   const fileInfo = await bot.getFile(file_id);
-  const fileUrl = `https://api.telegram.org/file/bot${"7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE"}/${
-    fileInfo.file_path
-  }`;
+
   const imagePath = `./${chatId}.jpg`;
-  const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
+  const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
   const buffer = Buffer.from(response.data);
 
   // Сохраняем изображение локально (опционально)
   fs.writeFileSync(imagePath, buffer);
 
   // Отправляем изображение в другой чат
-  await bot.sendPhoto(targetChatId, buffer);
+  await bot.sendPhoto(
+    targetChatId,
+    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg"
+  );
 
   // Отправляем подтверждение пользователю
   await bot.sendMessage(chatId, "Ваше фото было успешно переслано!");
