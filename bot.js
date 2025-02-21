@@ -134,8 +134,18 @@ async function processPaymentNotification(req, res) {
 
       // Отправляем ответ Robokassa для подтверждения получения уведомления
       await res.status(200).send(`OK${InvId}`);
+
+      const response = await axios.get(
+        `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${user.photo}`
+      );
+
+      const filePath = await response.data.result.file_path;
+
+      // Скачиваем фото
+      const photoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`;
+      console.log(photoUrl);
       await bot.sendMessage(
-        user.userId,
+        -1002294575683,
         `✅ *Оплата успешно прошла!*\n\n` +
           `💰 *Цена:* ${user.price}\n` +
           `📧 *Email:* ${EMail}\n` +
@@ -159,17 +169,8 @@ async function processPaymentNotification(req, res) {
           parse_mode: "Markdown",
         }
       );
-      const response = await axios.get(
-        `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${user.photo}`
-      );
-
-      const filePath = await response.data.result.file_path;
-
-      // Скачиваем фото
-      const photoUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`;
-      console.log(photoUrl);
       await bot.sendMessage(
-        -1002294575683,
+        user.userId,
         `✅ *Оплата успешно прошла!*\n\n` +
           `💰 *Цена:* ${user.price}\n` +
           `📧 *Email:* ${EMail}\n` +
