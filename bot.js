@@ -458,8 +458,7 @@ bot.onText(/\/start/, async (msg) => {
     responseType: "arraybuffer",
   });
 
-  fs.writeFileSync(imagePath, response.data);
-  await bot.sendPhoto(chatId, imagePath);
+  console.log(response.data);
 
   // Сообщение с кнопками
   await bot.sendMessage(chatId, "Что хотите сделать?", {
@@ -473,7 +472,6 @@ bot.onText(/\/start/, async (msg) => {
       one_time_keyboard: true, // Убирает клавиатуру после нажатия
     },
   });
-  fs.unlinkSync(imagePath); // Удаляем временный файл
 });
 // Обработчик команды /add
 bot.onText(/\/add/, async (msg) => {
