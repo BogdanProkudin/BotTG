@@ -434,10 +434,7 @@ bot.onText(/\/noob/, async (msg) => {
   // fs.writeFileSync(imagePath, buffer);
 
   // Отправляем изображение в другой чат
-  await bot.sendPhoto(
-    chatId,
-    "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg"
-  );
+  await bot.sendPhoto(chatId, buffer);
 
   // Отправляем подтверждение пользователю
   await bot.sendMessage(chatId, "Ваше фото было успешно переслано!");
