@@ -72,6 +72,9 @@ MongoClient.connect(
 async function processPaymentNotification(req, res) {
   // Получаем параметры из запроса Robokassa
   try {
+    if (!req.body) {
+      return res.status(400).json({ message: "Bad request" });
+    }
     const {
       OutSum,
       InvId,
