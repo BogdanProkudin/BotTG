@@ -431,11 +431,11 @@ bot.onText(/\/noob/, async (msg) => {
   const buffer = Buffer.from(response.data);
 
   // Сохраняем изображение локально (опционально)
-  fs.writeFileSync(imagePath, buffer);
+  // fs.writeFileSync(imagePath, buffer);
 
   // Отправляем изображение в другой чат
   await bot.sendPhoto(
-    targetChatId,
+    chatId,
     "https://api.telegram.org/file/bot7510967344:AAE67qW9AbBBu820dL9C8W6saUTQrWoRUAE/photos/file_0.jpg"
   );
 
