@@ -33,7 +33,7 @@ export function generateCalendar(year, month) {
   // Строка переключения месяцев с текущим месяцем и годом
   calendar.push([
     { text: "◀️", callback_data: `prev_${year}_${month}` },
-    { text: `${getMonthName(month)} ${year}`, callback_data: "ignore" },
+    { text: `${getMonthName(month)}`, callback_data: "ignore" },
     { text: "▶️", callback_data: `next_${year}_${month}` },
   ]);
 

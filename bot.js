@@ -155,6 +155,9 @@ async function processPaymentNotification(req, res) {
           `📞 *Номер телефона получателя:* ${
             user.recipientNumber ? user.recipientNumber : "Не указан номер"
           }\n` +
+          `📞 *Номер телефона заказчика:* ${
+            user.clientNumber ? user.clientNumber : "Не указан номер"
+          }\n` +
           `📍 *Адрес доставки:* ${
             user.address ? user.address : "Не указан адрес"
           }\n` +
@@ -344,19 +347,57 @@ function generatePaymentLink(
   password1,
   invId,
   outSum,
-  description
+  description,
+  items,
+  isTest = false
 ) {
-  // Расчёт контрольной суммы (SignatureValue)
-  const signatureValue = md5(
-    `${merchantLogin}:${outSum}:${invId}:${password1}`
+  // Формируем JSON-объект с фискальным чеком (54-ФЗ)
+  const receipt = {
+    sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
+    items: {
+      name: "Цветок", // Название товара
+      quantity: 1, // Количество
+      sum: 1, // Сумма
+      payment_method: "full_prepayment", // Полная предоплата
+      payment_object: "commodity", // Товар (можно "service" для услуг)
+      tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
+    },
+  };
+
+  // Преобразуем чек в строку и кодируем в base64
+  const encodedReceipt = Buffer.from(JSON.stringify(receipt)).toString(
+    "base64"
   );
 
-  // Формируем ссылку на оплату с параметрами
-  const paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&SignatureValue=${signatureValue}`;
+  // Формируем строку для подписи (SignatureValue)
+  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceipt}:${password1}`;
+  const signatureValue = crypto
+    .createHash("md5")
+    .update(signatureString)
+    .digest("hex");
 
-  // Возвращаем ссылку
+  // Формируем URL для оплаты
+  let paymentLink =
+    `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}` +
+    `&OutSum=${outSum}` +
+    `&InvoiceID=${invId}` +
+    `&Description=${encodeURIComponent(description)}` +
+    `&SignatureValue=${signatureValue}` +
+    `&Receipt=${encodeURIComponent(encodedReceipt)}` +
+    `&Encoding=utf-8` +
+    `&Culture=ru`;
+
+  // Включаем тестовый режим, если нужно
+  if (isTest) {
+    paymentLink += `&IsTest=1`;
+  }
+
   return paymentLink;
 }
+
+// Пример использования:
+
+// Товары в заказе
 
 bot.onText(/\/location/, async (msg) => {
   const chatId = msg.chat.id;
@@ -419,7 +460,40 @@ bot.on("location", async (msg) => {
 
   //   bot.sendLocation(chatId, latitude, longitude);
 });
+// import { getDistance } from "geolib";
+// bot.onText(/\/noob/, async (msg) => {
+//   async function getCoordinates(address) {
+//     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+//       address
+//     )}&format=json&limit=1`;
+//     const response = await axios.get(url);
 
+//     if (response.data.length === 0) {
+//       throw new Error(`Не удалось найти координаты для адреса: ${address}`);
+//     }
+
+//     const { lat, lon } = response.data[0];
+//     return { latitude: parseFloat(lat), longitude: parseFloat(lon) };
+//   }
+
+//   async function calculateDistance(address1, address2) {
+//     try {
+//       const coord1 = await getCoordinates(address1);
+//       const coord2 = await getCoordinates(address2);
+
+//       const distanceMeters = getDistance(coord1, coord2);
+//       const distanceKm = distanceMeters / 1000;
+
+//       console.log(`Расстояние: ${distanceKm.toFixed(2)} км`);
+//       return distanceKm;
+//     } catch (error) {
+//       console.error("Ошибка:", error.message);
+//     }
+//   }
+
+//   // Пример использования
+//   calculateDistance(" руновский переулок 8с1", " подольских курсантов 10");
+// });
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   console.log(chatId, "chatId");
@@ -747,11 +821,7 @@ bot.on("text", async (msg) => {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
-          keyboard: [
-            ["Отправить локацию"],
-            ["Ввести адрес", "Самовывоз"],
-            ["Назад"],
-          ],
+          keyboard: [["Ввести адрес", "Самовывоз"], ["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
@@ -1034,40 +1104,19 @@ bot.on("message", async (msg) => {
             { $set: { address: "Самовывоз", processType: "select_time" } }
           );
         }, 700);
-      } else if (text === "Отправить локацию") {
+      } else if (text === "Ввести адрес") {
         await bot.sendMessage(
           chatId,
-          "📍 *Как отправить локацию через Telegram:*\n\n" +
-            "1️⃣ *Нажмите на иконку скрепки 📎 (в нижнем левом углу экрана).*\n" +
-            '2️⃣ *Выберите пункт "Местоположение" из предложенных вариантов.*\n' +
-            "3️⃣ *Убедитесь, что ваше устройство имеет доступ к данным о местоположении.*\n" +
-            '4️⃣ *Telegram предложит отправить ваше текущее местоположение. Нажмите "Отправить свою геопозицию".*\n\n' +
-            '5️⃣ *Если вы хотите указать адрес вручную на карте, выберите "Выбрать точку на карте" и отметьте нужное место.*\n\n' +
-            "📱 *Данная функция доступна только на мобильных устройствах.*",
+          "Укажите, находится ли адрес доставки находится в пределах МКАД?",
           {
-            parse_mode: "Markdown",
-          }
-        );
-        await bot.sendMessage(
-          chatId,
-          "📍 **Пожалуйста, отправьте свою локацию.**\n\nЭто поможет нам быстрее найти ваш адрес и оформить доставку. 🗺️",
-          {
-            parse_mode: "Markdown",
             reply_markup: {
-              keyboard: [["Назад"]],
-              resize_keyboard: true,
-              one_time_keyboard: true,
+              keyboard: [["В зоне МКАД"], ["Вне зоны МКАД"]],
             },
           }
         );
-        // Обновление статуса пользователя в процессе
-        await collectionUser.updateOne(
-          { userId },
-          { $set: { isInProcess: true, processType: "send_location" } }
-        );
       }
       // Если пользователь выбрал путь через текстовый адрес
-      else if (text === "Ввести адрес") {
+      else if (text === "В зоне МКАД" || text === "Вне зоны МКАД") {
         await bot.sendMessage(
           chatId,
           "*Пожалуйста, введите свой адрес в следующем формате:*\n\n" +
@@ -1083,7 +1132,7 @@ bot.on("message", async (msg) => {
             },
           }
         );
-
+        await collectionUser.updateOne({ userId }, { $set: { MKAD: text } });
         // Обновление статуса пользователя в процессе
         await collectionUser.updateOne(
           { userId },
@@ -1713,21 +1762,15 @@ bot.on("callback_query", async (query) => {
         await bot.sendMessage(
           chatId,
           `Вы выбрали дату: *${formattedDate}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
-            `1️⃣ *Через локацию:* Нажмите кнопку "Отправить локацию" для отправки своего местоположения.\n` +
-            `(Для отправки локации необходимо, чтобы у вас был телефон и включено разрешение на доступ к местоположению в Telegram.)\n\n` +
-            `2️⃣ *Через текст:* Введите ваш адрес в формате: *Город, Улица, Дом* (например: Москва, Тверская улица, 7). \n` +
+            `1️⃣ *Ввести адрес:* Введите ваш адрес в формате: *Город, Улица, Дом* (например: Москва, Тверская улица, 7). \n` +
             `На данный момент мы работаем только в Москве.\n\n` +
-            `3️⃣ *Самовывоз*: Вы можете забрать товар самостоятельно с нашего магазина по адресу Москва, Тверская улица, 7.\n` +
+            `2️⃣ *Самовывоз*: Вы можете забрать товар самостоятельно с нашего магазина по адресу Москва, Руновский переулок 8, строение 1.\n` +
             `Для выбора этой опции нажмите "Самовывоз", и вы сможете выбрать удобное время для самовывоза.\n\n` +
             `ℹ️ *Обратите внимание:* Мы осуществляем доставку и самовывоз только в Москве.`,
           {
             parse_mode: "Markdown",
             reply_markup: {
-              keyboard: [
-                [{ text: "Отправить локацию" }],
-                ["Ввести адрес", "Самовывоз"],
-                ["Назад"],
-              ],
+              keyboard: [["Ввести адрес", "Самовывоз"], ["Назад"]],
               resize_keyboard: true,
               one_time_keyboard: true,
             },
