@@ -45,7 +45,7 @@ export async function cancelProcess(userId, collectionUser) {
         },
       }
     );
-    return "Вы вернулись в процесс выбора диапазона цен.";
+    return "Вы вернулись в процесс выбора интересующего вас каталога.";
   }
   if (user && user.processType === "payment") {
     await collectionUser.updateOne(

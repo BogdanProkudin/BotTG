@@ -664,7 +664,7 @@ bot.on("text", async (msg) => {
       (user && user.processType === "catalog_price=10000++")
     ) {
       const message = await cancelProcess(userId, collectionUser);
-      await bot.deleteMessage(chatId, user.message_to_delete);
+
       await collectionUser.updateOne(
         { userId },
         { $set: { message_to_delete: null } }
@@ -672,9 +672,9 @@ bot.on("text", async (msg) => {
       await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
-            ["До 4.000₽", "4.0000₽-7.000₽"],
+            ["Монобукеты", "Корзины"],
 
-            ["7.000₽-10.000₽", "10.000₽ и дороже"],
+            ["Раскидистые букеты", "Коробки"],
             ["Назад"],
           ],
           resize_keyboard: true,
@@ -1415,7 +1415,13 @@ bot.on("message", async (msg) => {
       const password1 = "Gux2OMl1lsq4HxGc12cQ";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
-      const outSum = await user.price;
+      const extraPrice =
+        user && (await user.MKAD) === "В зоне МКАД"
+          ? 250
+          : user.MKAD === "Вне зоны МКАД"
+          ? 500
+          : 0;
+      const outSum = (await user.price) + extraPrice;
 
       const paymentUrl = await generatePaymentLink(
         merchantLogin,
@@ -1432,6 +1438,7 @@ bot.on("message", async (msg) => {
       await bot.sendMessage(
         chatId,
         `💳 *Оплата заказа* 💳\n\n` +
+          `💰Финальная цена с учетом доставки: *${outSum}₽*\n\n` +
           `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
           `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
         {
@@ -1452,7 +1459,13 @@ bot.on("message", async (msg) => {
       const password1 = "Gux2OMl1lsq4HxGc12cQ";
       const invId = Math.floor(100000 + Math.random() * 900000);
 
-      const outSum = await user.price;
+      const extraPrice =
+        user && (await user.MKAD) === "В зоне МКАД"
+          ? 250
+          : user.MKAD === "Вне зоны МКАД"
+          ? 500
+          : 0;
+      const outSum = (await user.price) + extraPrice;
 
       const paymentUrl = await generatePaymentLink(
         merchantLogin,
@@ -1465,6 +1478,7 @@ bot.on("message", async (msg) => {
       await bot.sendMessage(
         chatId,
         `💳 *Оплата заказа* 💳\n\n` +
+          `💰Финальная цена с учетом доставки: *${outSum}₽*\n` +
           `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
           `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
         {
@@ -1558,12 +1572,13 @@ bot.on("message", async (msg) => {
         { userId },
         { $set: { isInProcess: true, processType: "catalog" } }
       );
-      await bot.sendMessage(chatId, "Выберете диапазон цен ", {
+
+      await bot.sendMessage(chatId, "Выберете интересующий вас каталог ", {
         reply_markup: {
           keyboard: [
-            ["До 4.000₽", "4.0000₽-7.000₽"],
+            ["Монобукеты", "Корзины"],
 
-            ["7.000₽-10.000₽", "10.000₽ и дороже"],
+            ["Раскидистые букеты", "Коробки"],
 
             ["Назад"],
           ],
@@ -1589,61 +1604,112 @@ bot.on("message", async (msg) => {
         }
       );
     }
-    if (text === "До 4.000₽" && user.processType === "catalog") {
+    if (text === "Монобукеты" && user.processType === "catalog") {
       await collectionUser.updateOne(
         { userId },
         { $set: { isInProcess: true, processType: "catalog_price=4000" } }
       );
 
-      await bot.sendMessage(chatId, "Вы выбрали диапазон: До 4.000₽", {
+      await bot.sendMessage(chatId, "Вы выбрали каталог: Монобукеты", {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
       });
-      await sendSlide(chatId, 0);
+
+      // Отправка каталога
+      async function sendCatalog() {
+        for (const item of slidesFor4k) {
+          await bot.sendPhoto(chatId, item.photo, {
+            caption: item.caption,
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+            },
+          });
+        }
+      }
+
+      await sendCatalog();
     }
-    if (text === "4.0000₽-7.000₽" && user.processType === "catalog") {
+    if (text === "Корзины" && user.processType === "catalog") {
       await collectionUser.updateOne(
         { userId },
         { $set: { isInProcess: true, processType: "catalog_price=8000" } }
       );
-      await bot.sendMessage(chatId, "Вы выбрали диапазон: 4.0000₽-7.000₽", {
+      await bot.sendMessage(chatId, "Вы выбрали каталог: Корзины", {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
       });
-      await sendSlide(chatId, 0);
+      async function sendCatalog() {
+        for (const item of slidesFor7k) {
+          await bot.sendPhoto(chatId, item.photo, {
+            caption: item.caption,
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+            },
+          });
+        }
+      }
+
+      await sendCatalog();
     }
-    if (text === "7.000₽-10.000₽" && user.processType === "catalog") {
+    if (text === "Коробки" && user.processType === "catalog") {
       await collectionUser.updateOne(
         { userId },
         { $set: { isInProcess: true, processType: "catalog_price=10000" } }
       );
-      await bot.sendMessage(chatId, "Вы выбрали диапазон: 7.000₽-10.000₽", {
+      await bot.sendMessage(chatId, "Вы выбрали каталог: Коробки", {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
       });
-      await sendSlide(chatId, 0);
-    } else if (text === "10.000₽ и дороже" && user.processType === "catalog") {
+      async function sendCatalog() {
+        for (const item of slidesFor10k) {
+          await bot.sendPhoto(chatId, item.photo, {
+            caption: item.caption,
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+            },
+          });
+        }
+      }
+      await sendCatalog();
+    } else if (
+      text === "Раскидистые букеты" &&
+      user.processType === "catalog"
+    ) {
       await collectionUser.updateOne(
         { userId },
         { $set: { isInProcess: true, processType: "catalog_price=10000++" } }
       );
-      await bot.sendMessage(chatId, "Вы выбрали диапазон: 10.000₽ и дороже", {
+      await bot.sendMessage(chatId, "Вы выбрали каталог: Раскидистые букеты", {
         reply_markup: {
           keyboard: [["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
       });
-      await sendSlide(chatId, 0);
+      async function sendCatalog() {
+        for (const item of slidesFor10moreK) {
+          await bot.sendPhoto(chatId, item.photo, {
+            caption: item.caption,
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+            },
+          });
+        }
+      }
+      await sendCatalog();
     }
   } catch (error) {
     console.error("Ошибка при обработке текстового сообщения:", error);
@@ -1836,101 +1902,116 @@ bot.on("callback_query", async (query) => {
 const slidesFor4k = [
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/976/0e7kl2ypajff6n6bbr00xwzvdy53jjtw.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/db3/nmugxa8378en403el40i4mi7p3hy1lcf.webp",
     caption:
-      "✨ Шляпная коробочка с садовой розой и маттиолой – изысканный подарок с утонченным ароматом.\n💰 Цена: 3 990 ₽",
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-sadovoy-rozoy-i-mattioloy/",
+      "✨ Яркий букет на день рождения из 9 кустовых пионовидных роз.\n💰 Цена:3 590 ₽",
+    url: "https://florimondi.ru/catalog/monobukety/yarkiy-buket-iz-9-kustovykh-pionovidnykh-roz/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/862/basmqp4iaggkp3kk0qdssbnogdwoezbm.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/187/cct4r30fwjhc1x7xryip9vrbehirkjfj.webp",
     caption:
-      '🌸 Букет "Эйфория" – роскошное сочетание гортензии, лизиантуса и кустовой пионовидной розы.\n💰 Цена: 3 990 ₽',
-    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/buket-eyforiya-s-gortenziey-liziantusom-i-kustovoy-pionovidnoy-rozoy/",
+      "🌸 Монобукет из кустовой пионовидной розы и веточек эвкалипта.\n💰 Цена: 3 990 ₽",
+    url: "https://florimondi.ru/catalog/monobukety/monobuket-iz-kustovoy-pionovidnoy-rozy-i-vetochek-evkalipta/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/iblock/f9e/pmmymh8ljo5e60498ld4d8mqh7zhgd3g.JPG",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/0df/xzwnwq81t5w3n66id34ldlboguoqc3s1.webp",
     caption:
-      '💜 Авторский букет "Лавандовый раф" – утонченность в каждом лепестке.\n💰 Цена: 3 990 ₽',
-    url: "https://florimondi.ru/catalog/online-vitrina/avtorskiy-buket-lavandovyy-raf/",
+      "💜 Букет на день рождения из 17 кружевных диантусов с эвкалиптом.\n💰 Цена: 4 590 ₽",
+    url: "https://florimondi.ru/catalog/monobukety/buket-iz-17-kruzhevnykh-diantusov-s-evkaliptom/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/e99/bx0jh2y24lz4vo2a9wpijuuv9tis5lye.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/4bf/u4p200na4f5frr9dm7iru00ffwyfb5nk.webp",
     caption:
-      '🌷 Букет "Фламинго" – нежность и воздушность кустовой пионовидной розы.\n💰 Цена: 3 990 ₽',
-    url: "https://florimondi.ru/catalog/srednij-buket-cvetov/buket-flamingo-iz-/",
+      "🌷 Большой букет из 35 кустовых пионовидных роз Мисти Баблз.\n💰 Цена: 9 990 ₽",
+    url: "https://florimondi.ru/catalog/monobukety/buket-iz-35-kustovykh-pionovidnykh-roz-misti-bablz/",
   },
 ];
 
 const slidesFor7k = [
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/a06/t38kfaf1f2joeid19rble70jyvuikx1w.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/45e/hxdwi73xqzpqay03h9a0kfrs2wxyi0d9.webp",
     caption:
-      '💖 Авторский букет с садовой розой "Любимчик" – утонченное сочетание оттенков и свежести.\n💰 Цена: 4 890 ₽',
-    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/avtorskiy-buket-s-sadovoy-rozoy-lyubimchik/",
+      "💖 Корзина на день рождения «Пинк» с французскими розами и клематисом.\n💰 Цена: 9 990 ₽",
+    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-pink-s-frantsuzskimi-rozami-i-klematisom/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/iblock/055/7yfbd1rxt85plwsbher9j1m1q5en174m.JPG",
-    caption:
-      "🌿 Нежный раскидистый букет с кустовой пионовидной розой – легкость и воздушность.\n💰 *Цена уточняется*",
-    url: "",
+      "https://florimondi.ru/upload/iblock/149/ytt3g4qbus3u5vdqvr5gjorgkxzlq06d.jpg",
+    caption: "🌿Корзина с фруктами «Смузи».\n💰 12 590 ₽",
+    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-fruktami-smuzi/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/478/430h0vfr3xl1pry2phw4owwbowlm2tis.webp",
-    caption:
-      '🌷 Шляпная коробка "Французский сад" – стильный подарок для ценителей красоты.\n💰 Цена: 4 590 ₽',
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobka-frantsuzskiy-sad/",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/92e/2zqkdo6j1b3fvuyg2unvyu4gd0e547al.webp",
+    caption: '🌷 Большая корзина с цветами "Райский сад".\n💰 Цена:12 990 ₽',
+    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-tsvetami-rayskiy-sad/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/iblock/90e/qm7r4957t45ru326m2w795v5t5wjtfda.JPG",
-    caption:
-      "🌸 Букет из кустовых пионовидных роз и диантусов – гармония нежности и свежести.\n💰 Цена: 5 590 ₽",
-    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/buket-iz-kustovykh-pionovidnykh-roz-i-diantusov/",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/4e3/0bd85tx3ecfhlfobm48ksgn3y3m1xwuq.webp",
+    caption: "🌸Большая корзина с цветами «Магия чувств».\n💰 Цена: 19 990 ₽",
+    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-tsvetami-magiya-chuvstv/",
   },
 ];
 
 const slidesFor10k = [
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/236/wwg8x82p8624r9i2dydmcq9np2dnmd92.webp",
-    caption: `🌺 Монобукет из 25 кустовых пионовидных роз – утонченность и элегантность в каждом бутоне! ✨ \n💰 Цена: 9 990 ₽`,
-    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/monobuket-iz-25-kustovykh-pionovidnykh-roz/",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/976/0e7kl2ypajff6n6bbr00xwzvdy53jjtw.webp",
+    caption: `🌺 Шляпная коробочка с садовой розой и маттиолой ✨ \n💰 Цена: 3 990 ₽`,
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-sadovoy-rozoy-i-mattioloy/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/09c/aqhp6bfvki9eazk4xvwyrpexthc0873g.webp",
-    caption: `🌸 Яркий букет с нежной сиренью и коробочка макарунс – идеальный подарок для создания атмосферы уюта! ☕\n💰 Цена: 6 990 ₽`,
-    url: "https://florimondi.ru/catalog/bukety-k-14-fevralya/yarkiy-buket-s-sirenyu-i-korobochka-makaruns/",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/1ec/41lapirmcai6t3p6p7fvut006fb1ne4z.webp",
+    caption: `🌸 Шляпная коробочка с алыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-alymi-frantsuzskimi-rozami/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/2fb/5pqavdop6at62g9bemvtmhnaamj2xdwc.webp",
+    caption: `🌸 Шляпная коробочка с лавандовыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-lavandovymi-frantsuzskimi-rozami/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/b20/79c848yng6gl3qxfwnlvsim3yxrvv65i.webp",
+    caption: `🌸 Шляпная коробочка с малиновыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
+    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-malinovymi-frantsuzskimi-rozami/",
   },
 ];
 
 const slidesFor10moreK = [
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/2a9/iyf8gsl6fyovj4e62bdur6uu4grzfzop.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/7fe/y5oxh2n0nw3ifo85d6flb3onevhzt15v.webp",
     caption:
-      "🌸 Элегантная корзина с садовыми розами в нежных пастельных тонах, дополненная изысканными конфетами. \n💰 Цена: 15 590 ₽",
-    url: "https://florimondi.ru/catalog/podarochnye-nabory/korzina-s-sadovymi-rozami-v-nezhnykh-tonakh-i-konfety/",
+      "🌸 Монобукет из кустовой пионовидной розы и веточек эвкалипта \n💰 Цена: 3 990 ₽",
+    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/monobuket-iz-kustovoy-pionovidnoy-rozy-i-vetochek-evkalipta/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/68b/il4l0epii1muy4es9jniac9lg6lekfrv.webp",
-    caption:
-      "💐 Большой воздушный букет из нежных гортензий и кустовых роз, создающий атмосферу утончённости и лёгкости. \n💰 Цена: 10 990 ₽",
-    url: "https://florimondi.ru/catalog/klassicheskie-bukety-tsvetov/vozdushnyy-buket-iz-gortenziy-i-kustovykh-roz/",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/718/leokgv9ajcxhppm6rbp54zy8k1ebko96.webp",
+    caption: '💐 Букет с розой Вайт О\'Хара "Замечательный" \n💰 Цена: 4 290 ₽',
+    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/buket-s-rozoy-vayt-o-khara-zamechatelnyy/",
   },
   {
     photo:
-      "https://florimondi.ru/upload/resize_cache/webp/iblock/567/kiax6ibfjpk51pl68xlcm2nhr6s6znml.webp",
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/706/m1wnj9peusz3ji4hlwe8hjl79igblbzv.webp",
     caption:
-      '🎁 Подарочный набор "Моей любимой" — роскошное сочетание цветов и изысканных угощений для особенного случая. \n💰 Цена: 16 890 ₽',
-    url: "https://florimondi.ru/catalog/bukety-k-14-fevralya/podarochnyy-nabor-moey-lyubimoy/",
+      '🎁 Авторский букет из садовой розы и нарциссов "Диковинный". \n💰 Цена: 4 590 ₽',
+    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/avtorskiy-buket-iz-sadovoy-rozy-i-nartsissov-dikovinnyy/",
+  },
+  {
+    photo:
+      "https://florimondi.ru/upload/resize_cache/webp/iblock/fa6/x1c95xh7fbaysgmnxo0v7usmusenv6km.webp",
+    caption:
+      "🎁 Раскидистый букет с лизиантусом и кустовой пионовидной розой. \n💰 Цена: 4 990 ₽",
+    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/raskidistyy-buket-s-liziantusom-i-kustovoy-pionovidnoy-rozoy/",
   },
 ];
 
