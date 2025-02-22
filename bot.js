@@ -355,7 +355,7 @@ function generatePaymentLink(
   const receipt = {
     sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
     items: {
-      name: "Цветок", // Название товара
+      name: "Название цветка", // Название товара
       quantity: 1, // Количество
       sum: 1, // Сумма
       payment_method: "full_prepayment", // Полная предоплата
