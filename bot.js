@@ -529,13 +529,20 @@ bot.onText(/\/start/, async (msg) => {
     return;
   }
   // Приветственное сообщение с использованием Markdown
+  bot.setChatMenuButton({
+    chat_id: chatId,
+    menu_button: JSON.stringify({
+      text: "Order food",
+      type: "commands",
+    }),
+  });
+
   await bot.sendMessage(
     chatId,
     "*Добро пожаловать!*\n\n" +
       "Это ваш помощник.\n\n" +
       "- Мы предлагаем:\n" +
       "  1. Отличное качество\n" +
-      "  2. Удобные заказы\n\n" +
       "_Спасибо, что выбрали нас!_",
     { parse_mode: "Markdown" }
   );
