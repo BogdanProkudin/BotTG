@@ -982,6 +982,7 @@ bot.on("message", async (msg) => {
       user.processType !== "catalog_price=15000" &&
       user.processType !== "client_number" &&
       user.processType !== "who_is_client" &&
+      user.processType !== "postcard" &&
       user.processType !== "prepare_payment")
   ) {
     console.log("User is in process");
