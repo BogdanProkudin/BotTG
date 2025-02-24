@@ -1445,10 +1445,10 @@ bot.on("message", async (msg) => {
   merchantLogin,
   password1,
   12345,
-  3050,
+  10,
   "Оплата букета",
   [
-    { name: "Авторский букет", quantity: 1, sum: 3050 },
+    { name: "Авторский букет", quantity: 1, sum: 10 },
   ],
   false
 );
@@ -1501,10 +1501,10 @@ console.log(link);
   merchantLogin,
   password1,
   12345,
-  3050,
+  10,
   "Оплата букета",
   [
-    { name: "Авторский букет", quantity: 1, sum: 3050 },
+    { name: "Авторский букет", quantity: 1, sum: 10 },
   ],
   false
 );
