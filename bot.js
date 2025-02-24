@@ -357,7 +357,7 @@ function generatePaymentLink(
     sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
     items: [
       {
-        name: "Название цветка", // Название товара
+        name: "Название цветка2", // Название товара
         quantity: 1, // Количество
         sum: 10, // Сумма
         payment_method: "full_prepayment", // Полная предоплата
