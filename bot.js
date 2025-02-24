@@ -342,6 +342,7 @@ function md5(string) {
   return crypto.createHash("md5").update(string).digest("hex").toUpperCase();
 }
 
+// Включаем тестовый режим, если нужно
 function generatePaymentLink(
   merchantLogin,
   password1,
@@ -372,7 +373,7 @@ function generatePaymentLink(
   );
 
   // Формируем строку для подписи (SignatureValue)
-  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceipt}:${password1}`;
+  const signatureString = `${merchantLogin}:${outSum}:${invId}:${password1}`;
   const signatureValue = crypto
     .createHash("md5")
     .update(signatureString)
@@ -396,7 +397,6 @@ function generatePaymentLink(
 
   return paymentLink;
 }
-
 // Пример использования:
 
 // Товары в заказе
@@ -1434,20 +1434,25 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 750
+          ? 1
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 950
+          ? 2
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 2000
+          ? 3
           : 0;
       const outSum = (await user.price) + extraPrice;
 
-      const paymentUrl = await generatePaymentLink(
+      const link = await generatePaymentLink(
         merchantLogin,
         password1,
-        invId,
-        outSum
+        12345,
+        10,
+        "Оплата букета",
+        [{ name: "Авторский букет", quantity: 1, sum: 10 }],
+        false
       );
+
+      console.log(link);
 
       await collectionUser.updateOne(
         { userId },
@@ -1460,7 +1465,7 @@ bot.on("message", async (msg) => {
           `📦 Цена товара: *${await user.price}₽*\n` +
           `🚚 Цена доставки: *${extraPrice}₽*\n` +
           `💰Финальная цена с учетом доставки: *${outSum}₽*\n\n` +
-          `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
+          `🔗 [Нажмите сюда, чтобы оплатить](${link})\n\n` +
           `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
         {
           parse_mode: "Markdown",
@@ -1483,20 +1488,25 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 750
+          ? 1
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 950
+          ? 2
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 2000
+          ? 3
           : 0;
       const outSum = (await user.price) + extraPrice;
 
-      const paymentUrl = await generatePaymentLink(
+      const link = await generatePaymentLink(
         merchantLogin,
         password1,
-        invId,
-        outSum
+        12345,
+        10,
+        "Оплата букета",
+        [{ name: "Авторский букет", quantity: 1, sum: 10 }],
+        false
       );
+
+      console.log(link);
 
       // Отправка ссылки пользователю
       await bot.sendMessage(
@@ -1505,7 +1515,7 @@ bot.on("message", async (msg) => {
           `📦 Цена товара: *${await user.price}₽*\n` +
           `🚚 Цена доставки: *${extraPrice}₽*\n` +
           `💰Финальная цена с учетом доставки: *${outSum}₽*\n` +
-          `🔗 [Нажмите сюда, чтобы оплатить](${paymentUrl})\n\n` +
+          `🔗 [Нажмите сюда, чтобы оплатить](${link})\n\n` +
           `✅ После успешной оплаты ваш заказ будет обработан автоматически.`,
         {
           parse_mode: "Markdown",
