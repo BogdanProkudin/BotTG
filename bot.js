@@ -1,4 +1,4 @@
-wimport TelegramBot from "node-telegram-bot-api";
+import TelegramBot from "node-telegram-bot-api";
 import { generateCalendar, getMonthName } from "./calendar.js";
 import { MongoClient } from "mongodb";
 import Robokaska from "robokassa";
