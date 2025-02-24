@@ -353,15 +353,17 @@ function generatePaymentLink(
 ) {
   // Формируем JSON-объект с фискальным чеком (54-ФЗ)
   const receipt = {
-    sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
-    items: {
-      name: "Название цветка", // Название товара
-      quantity: 1, // Количество
-      sum: 1, // Сумма
-      payment_method: "full_prepayment", // Полная предоплата
-      payment_object: "commodity", // Товар (можно "service" для услуг)
-      tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
-    },
+    sno: "usn_income", // Система налогообложения
+    items: [
+      {
+        name: "Название товара", // Название товара
+        quantity: 10, // Количество
+        amount: outSum, // Сумма (используйте outSum)
+        payment_method: "full_prepayment", // Метод оплаты
+        payment_object: "commodity", // Объект оплаты
+        tax: "none", // Налог
+      },
+    ],
   };
 
   // Преобразуем чек в строку и кодируем в base64
@@ -529,13 +531,12 @@ bot.onText(/\/start/, async (msg) => {
     return;
   }
   // Приветственное сообщение с использованием Markdown
-  bot.setChatMenuButton({
-    chat_id: chatId,
-    menu_button: JSON.stringify({
-      text: "Order food",
-      type: "commands",
-    }),
-  });
+  bot.setMyCommands([
+    {
+      command: "/menu",
+      description: "Возвращает вас в главное меню",
+    },
+  ]);
 
   await bot.sendMessage(
     chatId,
