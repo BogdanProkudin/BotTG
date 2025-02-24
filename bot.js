@@ -1442,11 +1442,8 @@ bot.on("message", async (msg) => {
       const link = await generatePaymentLink(
         merchantLogin,
         password1,
-        12345,
-        10,
-        "Оплата букета",
-        [{ name: "Авторский букет", quantity: 1, sum: 10 }],
-        false
+        invId,
+        outSum
       );
 
       console.log(link);
@@ -1496,11 +1493,8 @@ bot.on("message", async (msg) => {
       const link = await generatePaymentLink(
         merchantLogin,
         password1,
-        12345,
-        10,
-        "Оплата букета",
-        [{ name: "Авторский букет", quantity: 1, sum: 10 }],
-        false
+        invId,
+        outSum
       );
 
       console.log(link);
