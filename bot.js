@@ -1415,6 +1415,10 @@ bot.on("message", async (msg) => {
           },
         }
       );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { postcard: null, processType: "extra_information" } }
+      );
     } else if (
       user.processType === "postcard" &&
       text !== "Назад" &&
