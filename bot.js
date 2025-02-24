@@ -1308,9 +1308,7 @@ bot.on("message", async (msg) => {
           $set: {
             clientNumber: text,
             processType:
-              user.address === "Самовывоз"
-                ? "extra_information"
-                : "who_is_client",
+              user.address === "Самовывоз" ? "postcard" : "who_is_client",
           },
         }
       );
