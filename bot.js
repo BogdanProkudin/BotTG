@@ -354,15 +354,15 @@ function generatePaymentLink(
 ) {
   // Формируем JSON-объект с фискальным чеком (54-ФЗ)
   const receipt = {
-    sno: "usn_income", // Система налогообложения
+    sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
     items: [
       {
-        name: "Название товара", // Название товара
-        quantity: 10, // Количество
-        amount: outSum, // Сумма (используйте outSum)
-        payment_method: "full_prepayment", // Метод оплаты
-        payment_object: "commodity", // Объект оплаты
-        tax: "none", // Налог
+        name: "Название цветка", // Название товара
+        quantity: 1, // Количество
+        sum: 10, // Сумма
+        payment_method: "full_prepayment", // Полная предоплата
+        payment_object: "commodity", // Товар (можно "service" для услуг)
+        tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
       },
     ],
   };
@@ -373,27 +373,24 @@ function generatePaymentLink(
   );
 
   // Формируем строку для подписи (SignatureValue)
-  const signatureString = `${merchantLogin}:${outSum}:${invId}:${password1}`;
+  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceipt}:${password1}`;
   const signatureValue = crypto
     .createHash("md5")
     .update(signatureString)
     .digest("hex");
 
   // Формируем URL для оплаты
-  let paymentLink =
-    `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}` +
-    `&OutSum=${outSum}` +
-    `&InvoiceID=${invId}` +
-    `&Description=${encodeURIComponent(description)}` +
-    `&SignatureValue=${signatureValue}` +
-    `&Receipt=${encodeURIComponent(encodedReceipt)}` +
-    `&Encoding=utf-8` +
-    `&Culture=ru`;
+  let paymentLink = `
+    https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin} +
+    &OutSum=${outSum} +
+    &InvoiceID=${invId} +
+    &Description=${encodeURIComponent(description)} +
+    &SignatureValue=${signatureValue} +
+    &Receipt=${encodeURIComponent(encodedReceipt)} +
+    &Encoding=utf-8 +
+    &Culture=ru`;
 
   // Включаем тестовый режим, если нужно
-  if (isTest) {
-    paymentLink += `&IsTest=1`;
-  }
 
   return paymentLink;
 }
