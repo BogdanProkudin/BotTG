@@ -1433,11 +1433,11 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 750
+          ? 1
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 950
+          ? 2
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 2000
+          ? 3
           : 0;
       const outSum = (await user.price) + extraPrice;
 
@@ -1482,11 +1482,11 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 750
+          ? 1
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 950
+          ? 2
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 2000
+          ? 3
           : 0;
       const outSum = (await user.price) + extraPrice;
 
