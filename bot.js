@@ -1401,6 +1401,23 @@ bot.on("message", async (msg) => {
     } else if (
       user.processType === "postcard" &&
       text !== "Назад" &&
+      text === "Перейти дальше"
+    ) {
+      await bot.sendMessage(
+        chatId,
+        "Сейчас вы можете указать дополнительную информацию или перейти к оплате. ✨",
+        {
+          parse_mode: "Markdown",
+          reply_markup: {
+            keyboard: [["Перейти к оплате"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+    } else if (
+      user.processType === "postcard" &&
+      text !== "Назад" &&
       text !== "Перейти дальше"
     ) {
       await bot.sendMessage(
