@@ -1,4 +1,4 @@
-import TelegramBot from "node-telegram-bot-api";
+wimport TelegramBot from "node-telegram-bot-api";
 import { generateCalendar, getMonthName } from "./calendar.js";
 import { MongoClient } from "mongodb";
 import Robokaska from "robokassa";
@@ -342,7 +342,8 @@ function md5(string) {
   return crypto.createHash("md5").update(string).digest("hex").toUpperCase();
 }
 
-function generatePaymentLink(
+  // Включаем тестовый режим, если нужно
+ function generatePaymentLink(
   merchantLogin,
   password1,
   invId,
@@ -353,15 +354,15 @@ function generatePaymentLink(
 ) {
   // Формируем JSON-объект с фискальным чеком (54-ФЗ)
   const receipt = {
-    sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
-    items: {
-      name: "Название цветка", // Название товара
-      quantity: 1, // Количество
-      sum: 1, // Сумма
+    sno: "usn_income", // Система налогообложения (УСН Доход)
+    items: items.map((item) => ({
+      name: item.name, // Название товара
+      quantity: item.quantity, // Количество
+      sum: item.sum, // Сумма
       payment_method: "full_prepayment", // Полная предоплата
-      payment_object: "commodity", // Товар (можно "service" для услуг)
-      tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
-    },
+      payment_object: "commodity", // Товар
+      tax: "none", // Без НДС
+    })),
   };
 
   // Преобразуем чек в строку и кодируем в base64
@@ -370,7 +371,7 @@ function generatePaymentLink(
   );
 
   // Формируем строку для подписи (SignatureValue)
-  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceipt}:${password1}`;
+  const signatureString = `${merchantLogin}:${outSum}:${invId}:${password1}`;
   const signatureValue = crypto
     .createHash("md5")
     .update(signatureString)
@@ -394,7 +395,6 @@ function generatePaymentLink(
 
   return paymentLink;
 }
-
 // Пример использования:
 
 // Товары в заказе
@@ -1441,12 +1441,19 @@ bot.on("message", async (msg) => {
           : 0;
       const outSum = (await user.price) + extraPrice;
 
-      const paymentUrl = await generatePaymentLink(
-        merchantLogin,
-        password1,
-        invId,
-        outSum
-      );
+     const link = await generatePaymentLink(
+  merchantLogin,
+  password1,
+  12345,
+  3050,
+  "Оплата букета",
+  [
+    { name: "Авторский букет", quantity: 1, sum: 3050 },
+  ],
+  false
+);
+
+console.log(link);
 
       await collectionUser.updateOne(
         { userId },
@@ -1490,12 +1497,19 @@ bot.on("message", async (msg) => {
           : 0;
       const outSum = (await user.price) + extraPrice;
 
-      const paymentUrl = await generatePaymentLink(
-        merchantLogin,
-        password1,
-        invId,
-        outSum
-      );
+     const link = await generatePaymentLink(
+  merchantLogin,
+  password1,
+  12345,
+  3050,
+  "Оплата букета",
+  [
+    { name: "Авторский букет", quantity: 1, sum: 3050 },
+  ],
+  false
+);
+
+console.log(link);
 
       // Отправка ссылки пользователю
       await bot.sendMessage(
