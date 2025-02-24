@@ -381,9 +381,7 @@ function generatePaymentLink(
 
   // Формируем URL для оплаты
   let paymentLink = `
-    https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${encodeURIComponent(
-    description
-  )}&SignatureValue=${signatureValue}&Description=Цветы&Receipt=${encodeURIComponent(
+    https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=Цветы&SignatureValue=${signatureValue}&Receipt=${encodeURIComponent(
     encodedReceipt
   )}&Encoding=utf-8&Culture=ru`;
 
