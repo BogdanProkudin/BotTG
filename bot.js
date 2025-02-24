@@ -356,9 +356,9 @@ function generatePaymentLink(
   const receipt = {
     items: [
       {
-        name: "Название цветка2", // Название товара
+        name: "Букет цветов", // Название товара
         quantity: 1, // Количество
-        sum: 10, // Сумма
+        sum: outSum, // Сумма
 
         tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
       },
@@ -1385,7 +1385,28 @@ bot.on("message", async (msg) => {
 
       await bot.sendMessage(
         chatId,
-        "📱 Номер телефона получателя успешно выбран. \n\nСейчас, при желании, вы можете указать дополнительную информацию о заказе или нажать кнопку ниже, чтобы перейти к оплате. 💳",
+        "📱 Номер телефона получателя успешно выбран. \n\nСейчас, при желании, вы можете указать текст для открытки или перейти дальше.",
+        {
+          parse_mode: "Markdown",
+          reply_markup: {
+            keyboard: [["Перейти дальше"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { recipientNumber: text, processType: "postcard" } }
+      );
+    } else if (
+      user.processType === "postcard" &&
+      text !== "Назад" &&
+      text !== "Перейти дальше"
+    ) {
+      await bot.sendMessage(
+        chatId,
+        "✨Информация для открытки успешно сохранена. Сейчас вы можете указать дополнительную информацию или перейти к оплате. ✨ ",
         {
           parse_mode: "Markdown",
           reply_markup: {
@@ -1397,7 +1418,7 @@ bot.on("message", async (msg) => {
       );
       await collectionUser.updateOne(
         { userId },
-        { $set: { recipientNumber: text, processType: "extra_information" } }
+        { $set: { postcard: text, processType: "extra_information" } }
       );
     } else if (
       user.processType === "extra_information" &&
