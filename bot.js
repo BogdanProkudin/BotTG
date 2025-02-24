@@ -354,14 +354,12 @@ function generatePaymentLink(
 ) {
   // Формируем JSON-объект с фискальным чеком (54-ФЗ)
   const receipt = {
-    sno: "usn_income", // Система налогообложения (например, "usn_income" - УСН Доход)
     items: [
       {
         name: "Название цветка2", // Название товара
         quantity: 1, // Количество
         sum: 10, // Сумма
-        payment_method: "full_prepayment", // Полная предоплата
-        payment_object: "commodity", // Товар (можно "service" для услуг)
+
         tax: "none", // Тип налога ("none", "vat0", "vat10", "vat20" и т. д.)
       },
     ],
@@ -369,6 +367,7 @@ function generatePaymentLink(
 
   // Преобразуем чек в JSON-строку
   const receiptString = JSON.stringify(receipt);
+  console.log(receiptString);
 
   // URL-кодируем один раз для подписи
   const encodedReceiptForSignature = encodeURIComponent(receiptString);
