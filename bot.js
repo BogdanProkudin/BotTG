@@ -343,13 +343,13 @@ function md5(string) {
 }
 
 // Включаем тестовый режим, если нужно
+
 function generatePaymentLink(
   merchantLogin,
   password1,
   invId,
   outSum,
   description,
-  items,
   isTest = false
 ) {
   // Формируем JSON-объект с фискальным чеком (54-ФЗ)
@@ -367,28 +367,35 @@ function generatePaymentLink(
     ],
   };
 
-  // Преобразуем чек в строку и кодируем в base64
-  const encodedReceipt = Buffer.from(JSON.stringify(receipt)).toString(
-    "base64"
-  );
+  // Преобразуем чек в JSON-строку
+  const receiptString = JSON.stringify(receipt);
+
+  // URL-кодируем один раз для подписи
+  const encodedReceiptForSignature = encodeURIComponent(receiptString);
 
   // Формируем строку для подписи (SignatureValue)
-  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceipt}:${password1}`;
+  const signatureString = `${merchantLogin}:${outSum}:${invId}:${encodedReceiptForSignature}:${password1}`;
   const signatureValue = crypto
     .createHash("md5")
     .update(signatureString)
     .digest("hex");
 
+  // Дважды URL-кодируем чек для передачи в ссылке
+  const doubleEncodedReceipt = encodeURIComponent(encodedReceiptForSignature);
+
   // Формируем URL для оплаты
-  let paymentLink = `
-    https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=Цветы&SignatureValue=${signatureValue}&Receipt=${encodeURIComponent(
-    encodedReceipt
-  )}&Encoding=utf-8&Culture=ru`;
+  let paymentLink = `https://auth.robokassa.ru/Merchant/Index.aspx?MerchantLogin=${merchantLogin}&OutSum=${outSum}&InvoiceID=${invId}&Description=${encodeURIComponent(
+    description
+  )}&SignatureValue=${signatureValue}&Receipt=${doubleEncodedReceipt}&Encoding=utf-8&Culture=ru`;
 
   // Включаем тестовый режим, если нужно
+  if (isTest) {
+    paymentLink += "&IsTest=1";
+  }
 
   return paymentLink;
 }
+
 // Пример использования:
 
 // Товары в заказе
