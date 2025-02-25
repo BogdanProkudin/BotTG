@@ -164,9 +164,24 @@ async function processPaymentNotification(req, res) {
           `📅 *Дата доставки:* ${
             user.selectedDate ? user.selectedDate : "Не указана дата"
           }\n` +
-          `⏰ *Время доставки/Удобное время для самовывоза:* ${
-            user.time ? user.time : "Не указано время"
+          `📅 *Дальность доставки:* ${
+            user.MKAD ? user.MKAD : "у заказчика самовывоз"
           }\n` +
+          `⏰ *${
+            user.address !== "Самовывоз"
+              ? "Время доставки"
+              : "Удобное время для самовывоза"
+          }* ${user.time ? user.time : "Не указано время"}\n` +
+          `📍 *Кто получатель:* ${
+            user.whoIsClient && user.whoIsClient !== "Я"
+              ? user.whoIsClient
+              : user.whoIsClient
+              ? "Сам заказчик"
+              : "Не указан адрес"
+          }\n` +
+          `📝 *Текст для открытки:* ${
+            user.postcard ? user.postcard : "Не указано"
+          }\n\n` +
           `📝 *Дополнительная информация:* ${
             user.extraInformation ? user.extraInformation : "Не указано"
           }\n\n`,
@@ -1002,6 +1017,13 @@ bot.on("message", async (msg) => {
           isInProcess: false,
           processType: null,
           message_to_delete: null,
+          MKAD: null,
+          address: null,
+          clientNumber: null,
+          whoIsClient: null,
+          recipientNumber: null,
+          time: null,
+          step: null,
         },
       }
     );
@@ -1159,7 +1181,13 @@ bot.on("message", async (msg) => {
         setTimeout(async () => {
           await collectionUser.updateOne(
             { userId },
-            { $set: { address: "Самовывоз", processType: "select_time" } }
+            {
+              $set: {
+                address: "Самовывоз",
+                MKAD: null,
+                processType: "select_time",
+              },
+            }
           );
         }, 700);
       } else if (text === "Ввести адрес") {
