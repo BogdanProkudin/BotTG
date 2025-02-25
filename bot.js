@@ -1348,7 +1348,7 @@ bot.on("message", async (msg) => {
           {
             $set: {
               whoIsClient: text,
-              processType: "extra_information",
+              processType: "postcard",
             },
           }
         );
