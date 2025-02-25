@@ -975,21 +975,32 @@ bot.on("message", async (msg) => {
     console.log("collectionUser or collectionProduct is null");
     return;
   }
-  if (text === "/menu") {
-    await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
-      reply_markup: {
-        keyboard: [
-          ["О нас", "Наш сайт"],
-          ["Мы на карте", "Онлайн-витрина"],
-          ["Наш каталог"],
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-      },
-    });
+  if (text === "/menu" && user) {
+    await bot.sendMessage(
+      chatId,
+      "Вы отменили все действия. Возвращаемся в главное меню.",
+      {
+        reply_markup: {
+          keyboard: [
+            ["О нас", "Наш сайт"],
+            ["Мы на карте", "Онлайн-витрина"],
+            ["Наш каталог"],
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      }
+    );
+    await bot.deleteMessage(chatId, user.message_to_delete);
     await collectionUser.updateOne(
       { userId },
-      { $set: { isInProcess: false, processType: null } }
+      {
+        $set: {
+          isInProcess: false,
+          processType: null,
+          message_to_delete: null,
+        },
+      }
     );
     return;
   }
@@ -1984,6 +1995,14 @@ bot.on("callback_query", async (query) => {
           {
             chat_id: chatId,
             message_id: query.message.message_id,
+          }
+        );
+        await collectionUser.updateOne(
+          { userId: chatId },
+          {
+            $set: {
+              message_to_delete: query.message.message_id,
+            },
           }
         );
       } else if (callback_data === "ignore") {
