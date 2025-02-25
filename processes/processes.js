@@ -98,25 +98,25 @@ export async function cancelProcess(userId, collectionUser) {
         { userId },
         {
           $set: {
-            processType: "who_is_client",
-            whoIsClient: null,
+            processType: "postcard",
+            postcard: null,
           },
         }
       );
-      return "Вы вернулись в процесс выбора получателя.";
+      return "Вы вернулись в процесс указания текста для открытки💌.";
     } else if (user.whoIsClient === "Другой человек") {
       await collectionUser.updateOne(
         { userId },
         {
           $set: {
-            processType: "recipient_number",
-            recipientNumber: null,
+            processType: "postcard",
+            postcard: null,
           },
         }
       );
     }
 
-    return "Вы вернулись в процесс ввода номера телефона другого человека.";
+    return "Вы вернулись в процесс указания текста для открытки💌.";
   }
   if (
     user &&
@@ -127,12 +127,12 @@ export async function cancelProcess(userId, collectionUser) {
       { userId },
       {
         $set: {
-          processType: "client_number",
-          clientNumber: null,
+          processType: "postcard",
+          postcard: null,
         },
       }
     );
-    return "Вы вернулись в процесс ввода вашего номера телефона.";
+    return "Вы вернулись в процесс указания текста для открытки💌.";
   }
   if (user && user.processType === "client_number") {
     await collectionUser.updateOne(
