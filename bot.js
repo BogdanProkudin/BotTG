@@ -975,6 +975,7 @@ bot.on("message", async (msg) => {
     console.log("collectionUser or collectionProduct is null");
     return;
   }
+  const user = await collectionUser.findOne({ userId });
   if (text === "/menu" && user) {
     await bot.sendMessage(
       chatId,
@@ -1004,7 +1005,6 @@ bot.on("message", async (msg) => {
     );
     return;
   }
-  const user = await collectionUser.findOne({ userId });
 
   if (
     !user ||
