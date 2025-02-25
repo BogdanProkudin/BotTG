@@ -992,6 +992,8 @@ bot.on("message", async (msg) => {
         },
       }
     );
+    console.log(user.message_to_delete, "message_to_delete");
+
     await bot.deleteMessage(chatId, user.message_to_delete);
     await collectionUser.updateOne(
       { userId },
@@ -1117,7 +1119,7 @@ bot.on("message", async (msg) => {
           keyboard: [["Назад"]],
         },
       });
-      await bot.sendMessage(
+      const messageWithCalendar = await bot.sendMessage(
         chatId,
         "📅Пожалуйста, выберите удобную вам дату:          ",
         {
@@ -1132,7 +1134,7 @@ bot.on("message", async (msg) => {
         { userId: chatId },
         {
           $set: {
-            message_to_delete: msg.message_id,
+            message_to_delete: messageWithCalendar.message_id,
           },
         }
       );
