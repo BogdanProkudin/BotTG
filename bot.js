@@ -770,6 +770,8 @@ bot.on("text", async (msg) => {
       user.processType === "postcard" &&
       user.address === "Самовывоз"
     ) {
+      console.log("exit где нужно");
+
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
