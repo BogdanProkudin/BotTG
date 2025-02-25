@@ -88,6 +88,44 @@ export async function cancelProcess(userId, collectionUser) {
     );
     return "Вы вернулись в процесс ввода вашего номера телефона.";
   }
+  if (user && user.processType === "postcard" && user.address === "Самовывоз") {
+    await collectionUser.updateOne(
+      { userId },
+      {
+        $set: {
+          processType: "client_number",
+          clientNumber: null,
+        },
+      }
+    );
+    return "Вы вернулись в процесс ввода вашего номера телефона.";
+  }
+  if (user && user.processType === "postcard" && user.address !== "Самовывоз") {
+    if (user.whoIsClient === "Я") {
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            processType: "who_is_client",
+            whoIsClient: null,
+          },
+        }
+      );
+      return "Вы вернулись в процесс указания текста для открытки💌.";
+    } else if (user.whoIsClient === "Другой человек") {
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: {
+            processType: "recipient_number",
+            recipientNumber: null,
+          },
+        }
+      );
+    }
+
+    return "Вы вернулись в процесс указания текста для открытки💌.";
+  }
   if (
     user &&
     user.processType === "extra_information" &&
