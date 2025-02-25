@@ -975,7 +975,24 @@ bot.on("message", async (msg) => {
     console.log("collectionUser or collectionProduct is null");
     return;
   }
-
+  if (text === "/menu") {
+    await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
+      reply_markup: {
+        keyboard: [
+          ["О нас", "Наш сайт"],
+          ["Мы на карте", "Онлайн-витрина"],
+          ["Наш каталог"],
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    });
+    await collectionUser.updateOne(
+      { userId },
+      { $set: { isInProcess: false, processType: null } }
+    );
+    return;
+  }
   const user = await collectionUser.findOne({ userId });
 
   if (
