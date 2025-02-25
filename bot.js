@@ -1008,8 +1008,9 @@ bot.on("message", async (msg) => {
       }
     );
     console.log(user.message_to_delete, "message_to_delete");
-
-    await bot.deleteMessage(chatId, user.message_to_delete);
+    if (user.message_to_delete) {
+      await bot.deleteMessage(chatId, user.message_to_delete);
+    }
     await collectionUser.updateOne(
       { userId },
       {
