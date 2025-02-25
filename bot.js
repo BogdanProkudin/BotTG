@@ -1128,6 +1128,14 @@ bot.on("message", async (msg) => {
           },
         }
       );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            message_to_delete: msg.message_id,
+          },
+        }
+      );
     } else if (user.processType === "prepare_address") {
       if (text === "Самовывоз") {
         const availableTimes = getAvailableShippingTime(user);
