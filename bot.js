@@ -764,7 +764,22 @@ bot.on("text", async (msg) => {
       });
       return;
     }
-
+    if (
+      user &&
+      user.processType &&
+      user.processType === "postcard" &&
+      user.address === "Самовывоз"
+    ) {
+      const message = await cancelProcess(userId, collectionUser);
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
+    }
     if (
       user &&
       user.processType &&
