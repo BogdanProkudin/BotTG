@@ -662,6 +662,7 @@ bot.on("text", async (msg) => {
     );
     return;
   }
+
   if (text === "Назад" && user.processType !== "finished") {
     if (
       (user && user.processType === "catalog_price=4000") ||
@@ -750,18 +751,13 @@ bot.on("text", async (msg) => {
       });
       return;
     }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "extra_information" &&
-      user.address === "Самовывоз"
-    ) {
+    if (user && user.processType && user.processType === "extra_information") {
       console.log("exit");
 
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
         reply_markup: {
-          keyboard: [["Назад"]],
+          keyboard: [["Перейти дальше"], ["Назад"]],
           resize_keyboard: true,
           one_time_keyboard: true,
         },
@@ -772,7 +768,7 @@ bot.on("text", async (msg) => {
     if (
       user &&
       user.processType &&
-      user.processType === "extra_information" &&
+      user.processType === "postcard" &&
       user.whoIsClient === "Я"
     ) {
       const message = await cancelProcess(userId, collectionUser);
@@ -806,7 +802,7 @@ bot.on("text", async (msg) => {
     if (
       user &&
       user.processType &&
-      user.processType === "extra_information" &&
+      user.processType === "postcard" &&
       (user.whoIsClient === "Другой человек" || user.whoIsClient === "Я")
     ) {
       const message = await cancelProcess(userId, collectionUser);
