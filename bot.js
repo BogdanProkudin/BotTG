@@ -754,7 +754,7 @@ bot.on("text", async (msg) => {
       user &&
       user.processType &&
       user.processType === "recipient_number" &&
-      user.whoIsClient === "Другой человек"
+      (user.whoIsClient === "Другой человек" || user.whoIsClient === "2")
     ) {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
@@ -801,7 +801,7 @@ bot.on("text", async (msg) => {
       user &&
       user.processType &&
       user.processType === "postcard" &&
-      user.whoIsClient === "Я"
+      (user.whoIsClient === "Я" || user.whoIsClient === "1")
     ) {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
@@ -835,7 +835,10 @@ bot.on("text", async (msg) => {
       user &&
       user.processType &&
       user.processType === "postcard" &&
-      (user.whoIsClient === "Другой человек" || user.whoIsClient === "Я")
+      (user.whoIsClient === "Другой человек" ||
+        user.whoIsClient === "Я" ||
+        user.whoIsClient === "1" ||
+        user.whoIsClient === "2")
     ) {
       const message = await cancelProcess(userId, collectionUser);
       await bot.sendMessage(chatId, message, {
