@@ -101,7 +101,7 @@ export async function cancelProcess(userId, collectionUser) {
     return "Вы вернулись в процесс ввода вашего номера телефона.";
   }
   if (user && user.processType === "postcard" && user.address !== "Самовывоз") {
-    if (user.whoIsClient === "Я") {
+    if (user.whoIsClient === "Я" || user.whoIsClient === "1") {
       await collectionUser.updateOne(
         { userId },
         {
@@ -112,7 +112,10 @@ export async function cancelProcess(userId, collectionUser) {
         }
       );
       return "Вы вернулись в процесс указания кто получит товар.";
-    } else if (user.whoIsClient === "Другой человек") {
+    } else if (
+      user.whoIsClient === "Другой человек" ||
+      user.whoIsClient === "2"
+    ) {
       await collectionUser.updateOne(
         { userId },
         {
@@ -131,7 +134,7 @@ export async function cancelProcess(userId, collectionUser) {
     user.processType === "extra_information" &&
     user.address !== "Самовывоз"
   ) {
-    if (user.whoIsClient === "Я") {
+    if (user.whoIsClient === "Я" || user.whoIsClient === "1") {
       await collectionUser.updateOne(
         { userId },
         {
@@ -142,7 +145,10 @@ export async function cancelProcess(userId, collectionUser) {
         }
       );
       return "Вы вернулись в процесс указания текста для открытки💌.";
-    } else if (user.whoIsClient === "Другой человек") {
+    } else if (
+      user.whoIsClient === "Другой человек" ||
+      user.whoIsClient === "2"
+    ) {
       await collectionUser.updateOne(
         { userId },
         {
@@ -187,7 +193,7 @@ export async function cancelProcess(userId, collectionUser) {
   if (
     user &&
     user.processType === "recipient_number" &&
-    user.whoIsClient === "Другой человек"
+    (user.whoIsClient === "Другой человек" || user.whoIsClient === "2")
   ) {
     await collectionUser.updateOne(
       { userId },
