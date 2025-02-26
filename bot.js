@@ -1011,9 +1011,6 @@ bot.on("message", async (msg) => {
         }
       );
 
-      if (user && user.message_to_delete) {
-        await bot.deleteMessage(chatId, user.message_to_delete);
-      }
       await collectionUser.findOneAndUpdate(
         { userId },
         {
