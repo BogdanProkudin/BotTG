@@ -985,81 +985,80 @@ bot.on("message", async (msg) => {
   const userId = msg.from.id;
   const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
   console.log(chatType);
-
-  if (chatType === "supergroup") {
-    return; // Игнорируем команды в группе
-  }
-  if (!collectionUser || !collectionProduct) {
-    console.log("collectionUser or collectionProduct is null");
-    return;
-  }
-  const user = await collectionUser.findOne({ userId });
-  if (text === "/menu" && user) {
-    await bot.sendMessage(
-      chatId,
-      "Вы отменили все действия. Возвращаемся в главное меню.",
-      {
-        reply_markup: {
-          keyboard: [
-            ["О нас", "Наш сайт"],
-            ["Мы на карте", "Онлайн-витрина"],
-            ["Наш каталог"],
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      }
-    );
-
-    if (user && user.message_to_delete) {
-      await bot.deleteMessage(chatId, user.message_to_delete);
-    }
-    await collectionUser.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          isInProcess: false,
-          processType: null,
-          message_to_delete: null,
-          MKAD: null,
-          address: null,
-          clientNumber: null,
-          whoIsClient: null,
-          recipientNumber: null,
-          time: null,
-          step: null,
-        },
-      }
-    );
-    return;
-  }
-
-  if (
-    !user ||
-    (user.isInProcess &&
-      user.processType !== "showcase" &&
-      user.processType !== "select_date" &&
-      user.processType !== "prepare_address" &&
-      user.processType !== "send_location" &&
-      user.processType !== "enter_address" &&
-      user.processType !== "select_time" &&
-      user.processType !== "recipient_number" &&
-      user.processType !== "extra_information" &&
-      user.processType !== "catalog" &&
-      user.processType !== "catalog_price=4000" &&
-      user.processType !== "catalog_price=8000" &&
-      user.processType !== "catalog_price=15000" &&
-      user.processType !== "client_number" &&
-      user.processType !== "who_is_client" &&
-      user.processType !== "postcard" &&
-      user.processType !== "prepare_payment")
-  ) {
-    console.log("User is in process");
-
-    return; // Не обрабатываем, если пользователь в процессе
-  }
-
   try {
+    if (chatType === "supergroup") {
+      return; // Игнорируем команды в группе
+    }
+    if (!collectionUser || !collectionProduct) {
+      console.log("collectionUser or collectionProduct is null");
+      return;
+    }
+    const user = await collectionUser.findOne({ userId });
+    if (text === "/menu" && user) {
+      await bot.sendMessage(
+        chatId,
+        "Вы отменили все действия. Возвращаемся в главное меню.",
+        {
+          reply_markup: {
+            keyboard: [
+              ["О нас", "Наш сайт"],
+              ["Мы на карте", "Онлайн-витрина"],
+              ["Наш каталог"],
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+
+      if (user && user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+      await collectionUser.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            isInProcess: false,
+            processType: null,
+            message_to_delete: null,
+            MKAD: null,
+            address: null,
+            clientNumber: null,
+            whoIsClient: null,
+            recipientNumber: null,
+            time: null,
+            step: null,
+          },
+        }
+      );
+      return;
+    }
+
+    if (
+      !user ||
+      (user.isInProcess &&
+        user.processType !== "showcase" &&
+        user.processType !== "select_date" &&
+        user.processType !== "prepare_address" &&
+        user.processType !== "send_location" &&
+        user.processType !== "enter_address" &&
+        user.processType !== "select_time" &&
+        user.processType !== "recipient_number" &&
+        user.processType !== "extra_information" &&
+        user.processType !== "catalog" &&
+        user.processType !== "catalog_price=4000" &&
+        user.processType !== "catalog_price=8000" &&
+        user.processType !== "catalog_price=15000" &&
+        user.processType !== "client_number" &&
+        user.processType !== "who_is_client" &&
+        user.processType !== "postcard" &&
+        user.processType !== "prepare_payment")
+    ) {
+      console.log("User is in process");
+
+      return; // Не обрабатываем, если пользователь в процессе
+    }
+
     if (text === "Онлайн-витрина" && !user.isInProcess) {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
