@@ -1021,6 +1021,7 @@ bot.on("message", async (msg) => {
             MKAD: null,
             address: null,
             clientNumber: null,
+            selectedDate: null,
             whoIsClient: null,
             recipientNumber: null,
             time: null,
