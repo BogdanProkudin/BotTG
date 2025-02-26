@@ -1014,23 +1014,20 @@ bot.on("message", async (msg) => {
     if (user && user.message_to_delete) {
       await bot.deleteMessage(chatId, user.message_to_delete);
     }
-    await collectionUser.updateOne(
-      { userId },
-      {
-        $set: {
-          isInProcess: false,
-          processType: null,
-          message_to_delete: null,
-          MKAD: null,
-          address: null,
-          clientNumber: null,
-          whoIsClient: null,
-          recipientNumber: null,
-          time: null,
-          step: null,
-        },
-      }
-    );
+    await collectionUser.updateOne(chatId, {
+      $set: {
+        isInProcess: false,
+        processType: null,
+        message_to_delete: null,
+        MKAD: null,
+        address: null,
+        clientNumber: null,
+        whoIsClient: null,
+        recipientNumber: null,
+        time: null,
+        step: null,
+      },
+    });
     return;
   }
 
