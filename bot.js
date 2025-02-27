@@ -1063,7 +1063,14 @@ bot.on("message", async (msg) => {
           },
         }
       );
-
+      if (user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+      if (user.photo_to_delete) {
+        user.photo_to_delete.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
       await collectionUser.findOneAndUpdate(
         { userId },
         {
