@@ -660,6 +660,7 @@ bot.on("text", async (msg) => {
       { userId },
       { $set: { isInProcess: false, processType: null } }
     );
+
     await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
       reply_markup: {
         keyboard: [
@@ -687,10 +688,14 @@ bot.on("text", async (msg) => {
     ) {
       const message = await cancelProcess(userId, collectionUser);
 
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { message_to_delete: null } }
-      );
+      const user = await collectionUser.findOne({ userId });
+      if (!user) {
+        return;
+      }
+      const deletedPhotoIds = user.photo_to_delete;
+      deletedPhotoIds.forEach((photoId) => {
+        bot.deleteMessage(chatId, photoId);
+      });
       await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
@@ -703,6 +708,10 @@ bot.on("text", async (msg) => {
           one_time_keyboard: true,
         },
       });
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { message_to_delete: null, photo_to_delete: [] } }
+      );
       return;
     }
     if (user && user.processType && user.processType === "payment") {
@@ -725,6 +734,36 @@ bot.on("text", async (msg) => {
           one_time_keyboard: true,
         },
       });
+      return;
+    }
+    if (user && user.processType && user.processType === "select_date") {
+      const message = await cancelProcess(userId, collectionUser);
+      const user = await collectionUser.findOne({ userId });
+      if (!user) {
+        return;
+      }
+      await bot.sendMessage(chatId, message, {
+        reply_markup: {
+          keyboard: [
+            ["О нас", "Наш сайт"], // Кнопки в одном ряду
+            ["Мы на карте", "Онлайн-витрина"], // Кнопки во втором ряду
+            ["Наш каталог"], // Кнопка в третьем ряду
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      const deletedPhotoIds = user.photo_to_delete;
+      if (deletedPhotoIds.length > 0) {
+        deletedPhotoIds.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
+      await bot.deleteMessage(chatId, user.message_to_delete);
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { message_to_delete: null, photo_to_delete: [] } }
+      );
       return;
     }
     if (user && user.processType && user.processType === "who_is_client") {
@@ -866,6 +905,20 @@ bot.on("text", async (msg) => {
       return;
     } else {
       const message = await cancelProcess(userId, collectionUser);
+      const user = await collectionUser.findOne({ userId });
+      if (!user) {
+        return;
+      }
+      const deletedPhotoIds = await user.photo_to_delete;
+      if (deletedPhotoIds.length > 0) {
+        deletedPhotoIds.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { photo_to_delete: [] } }
+      );
       await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
@@ -1769,15 +1822,26 @@ bot.on("message", async (msg) => {
 
       // Отправка каталога
       async function sendCatalog() {
-        for (const item of slidesFor4k) {
-          await bot.sendPhoto(chatId, item.photo, {
+        slidesFor4k.forEach(async (item, index) => {
+          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
             caption: item.caption,
             parse_mode: "Markdown",
             reply_markup: {
-              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+              inline_keyboard: [
+                [
+                  {
+                    text: "🛒 Купить",
+                    callback_data: `vitrina_4k_${index}`,
+                  },
+                ],
+              ],
             },
           });
-        }
+          await collectionUser.updateOne(
+            { userId },
+            { $push: { photo_to_delete: sentMessage.message_id } }
+          );
+        });
       }
 
       await sendCatalog();
@@ -1795,15 +1859,26 @@ bot.on("message", async (msg) => {
         },
       });
       async function sendCatalog() {
-        for (const item of slidesFor7k) {
-          await bot.sendPhoto(chatId, item.photo, {
+        slidesFor7k.forEach(async (item, index) => {
+          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
             caption: item.caption,
             parse_mode: "Markdown",
             reply_markup: {
-              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+              inline_keyboard: [
+                [
+                  {
+                    text: "🛒 Купить",
+                    callback_data: `vitrina_7k_${index}`,
+                  },
+                ],
+              ],
             },
           });
-        }
+          await collectionUser.updateOne(
+            { userId },
+            { $push: { photo_to_delete: sentMessage.message_id } }
+          );
+        });
       }
 
       await sendCatalog();
@@ -1821,15 +1896,26 @@ bot.on("message", async (msg) => {
         },
       });
       async function sendCatalog() {
-        for (const item of slidesFor10k) {
-          await bot.sendPhoto(chatId, item.photo, {
+        slidesFor10k.forEach(async (item, index) => {
+          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
             caption: item.caption,
             parse_mode: "Markdown",
             reply_markup: {
-              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+              inline_keyboard: [
+                [
+                  {
+                    text: "🛒 Купить",
+                    callback_data: `vitrina_10k_${index}`,
+                  },
+                ],
+              ],
             },
           });
-        }
+          await collectionUser.updateOne(
+            { userId },
+            { $push: { photo_to_delete: sentMessage.message_id } }
+          );
+        });
       }
       await sendCatalog();
     } else if (
@@ -1848,15 +1934,26 @@ bot.on("message", async (msg) => {
         },
       });
       async function sendCatalog() {
-        for (const item of slidesFor10moreK) {
-          await bot.sendPhoto(chatId, item.photo, {
+        slidesFor10moreK.forEach(async (item, index) => {
+          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
             caption: item.caption,
             parse_mode: "Markdown",
             reply_markup: {
-              inline_keyboard: [[{ text: "🛒 Купить", url: item.url }]],
+              inline_keyboard: [
+                [
+                  {
+                    text: "🛒 Купить",
+                    callback_data: `vitrina_14k_${index}`,
+                  },
+                ],
+              ],
             },
           });
-        }
+          await collectionUser.updateOne(
+            { userId },
+            { $push: { photo_to_delete: sentMessage.message_id } }
+          );
+        });
       }
       await sendCatalog();
     }
@@ -1876,95 +1973,16 @@ bot.on("callback_query", async (query) => {
     }
     const chatId = query.message.chat.id;
     const callback_data = query.data;
+
     console.log("callback_data", callback_data);
 
     const user = await collectionUser.findOne({ userId: query.from.id });
-    if (user.processType === "catalog_price=10000++") {
-      console.log(chatId);
-
-      const data = query.data.split("_");
-      const action = data[0];
-      console.log(query.data, "data");
-
-      const slideIndex = parseInt(data[1]);
-      console.log(slideIndex, action);
-
-      if (action === "prev" && slideIndex > 0) {
-        await bot.deleteMessage(chatId, query.message.message_id);
-        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
-      } else if (
-        action === "next" &&
-        slideIndex < slidesFor10moreK.length - 1
-      ) {
-        await bot.deleteMessage(chatId, query.message.message_id);
-        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
-      } else if (action === "disable") {
-        await bot.answerCallbackQuery(query.id, {
-          text: "Нет доступных действий.",
-          show_alert: false,
-        });
-      }
-    }
-    if (user.processType === "catalog_price=10000") {
-      console.log(chatId);
-
-      const data = query.data.split("_");
-      const action = data[0];
-      console.log(query.data, "data");
-
-      const slideIndex = parseInt(data[1]);
-      console.log(slideIndex, action);
-
-      if (action === "prev" && slideIndex > 0) {
-        await bot.deleteMessage(chatId, query.message.message_id);
-        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
-      } else if (action === "next" && slideIndex < slidesFor10k.length - 1) {
-        await bot.deleteMessage(chatId, query.message.message_id);
-        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
-      } else if (action === "disable") {
-        await bot.answerCallbackQuery(query.id, {
-          text: "Нет доступных действий.",
-          show_alert: false,
-        });
-      }
-    }
     if (
-      user.processType === "catalog_price=4000" ||
-      user.processType === "catalog_price=8000"
-    ) {
-      console.log(chatId);
-
-      // Получаем текущий индекс из callback_data
-      const data = query.data.split("_");
-      const action = data[0];
-      console.log(query.data, "data");
-
-      const slideIndex = parseInt(data[1]);
-      console.log(slideIndex, action);
-
-      if (action === "prev" && slideIndex > -1) {
-        // Переход на предыдущий слайд
-        await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-        await sendSlide(chatId, slideIndex - 1, query.message.message_id);
-      } else if (action === "next" && slideIndex < slidesFor4k.length - 1) {
-        // Переход на следующий слайд
-        await bot.deleteMessage(chatId, query.message.message_id); // Удаляем старый слайд
-        await sendSlide(chatId, slideIndex + 1, query.message.message_id);
-      } else if (action === "disable") {
-        await bot.answerCallbackQuery(query.id, {
-          text: "Нет доступных действий.",
-          show_alert: false,
-        });
-      }
-    } else if (
       callback_data.startsWith("date_") ||
       callback_data.startsWith("prev_") ||
       callback_data.startsWith("next_") ||
       callback_data === "ignore"
     ) {
-      // const chatId = query.message.chat.id;
-      // const data = callbackQuery.data;
-
       if (callback_data.startsWith("date_")) {
         const rawDate = callback_data.split("_")[1]; // "2025-02-06"
 
@@ -1998,6 +2016,7 @@ bot.on("callback_query", async (query) => {
             $set: {
               selectedDate: formattedDate,
               processType: "prepare_address",
+              message_to_delete: null,
             },
           }
         );
@@ -2051,6 +2070,156 @@ bot.on("callback_query", async (query) => {
 
       // Отправляем запрос на ввод адреса
     }
+    const vitrinaData = parseCallbackData(callback_data);
+    console.log(vitrinaData);
+    if (!vitrinaData) return;
+    if (vitrinaData.price === "4") {
+      const selectedProduct = slidesFor4k[vitrinaData.lastNum];
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const calendar = generateCalendar(year, month);
+
+      const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
+      console.log("selectedProduct", selectedProduct);
+
+      if (user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+      const sentMessage = await bot.sendMessage(
+        chatId,
+        "📅Пожалуйста, выберите удобную вам дату:",
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            isInProcess: true,
+            processType: "select_date",
+            photo: selectedProduct.photo,
+            message_to_delete: sentMessage.message_id,
+            price: price[1],
+          },
+        }
+      );
+    } else if (vitrinaData.price === "7") {
+      const selectedProduct = slidesFor7k[vitrinaData.lastNum];
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const calendar = generateCalendar(year, month);
+
+      const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
+      console.log(price);
+
+      console.log("selectedProduct", selectedProduct);
+
+      if (user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+      const sentMessage = await bot.sendMessage(
+        chatId,
+        "📅Пожалуйста, выберите удобную вам дату:",
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            isInProcess: true,
+            processType: "select_date",
+            photo: selectedProduct.photo,
+            message_to_delete: sentMessage.message_id,
+            price: price[1],
+          },
+        }
+      );
+      console.log("selectedProduct", selectedProduct);
+    } else if (vitrinaData.price === "10") {
+      const selectedProduct = slidesFor10k[vitrinaData.lastNum];
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const calendar = generateCalendar(year, month);
+
+      const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
+      console.log("selectedProduct", selectedProduct);
+      if (user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+
+      const sentMessage = await bot.sendMessage(
+        chatId,
+        "📅Пожалуйста, выберите удобную вам дату:",
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            isInProcess: true,
+            processType: "select_date",
+            photo: selectedProduct.photo,
+            message_to_delete: sentMessage.message_id,
+            price: price[1],
+          },
+        }
+      );
+      console.log("selectedProduct", selectedProduct);
+    } else if (vitrinaData.price === "14") {
+      const selectedProduct = slidesFor10moreK[vitrinaData.lastNum];
+      console.log("selectedProduct", selectedProduct);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const calendar = generateCalendar(year, month);
+
+      const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
+      console.log("selectedProduct", selectedProduct);
+
+      if (user.message_to_delete) {
+        await bot.deleteMessage(chatId, user.message_to_delete);
+      }
+
+      const sentMessage = await bot.sendMessage(
+        chatId,
+        "📅Пожалуйста, выберите удобную вам дату:",
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            isInProcess: true,
+            processType: "select_date",
+            photo: selectedProduct.photo,
+            message_to_delete: sentMessage.message_id,
+            price: price[1],
+          },
+        }
+      );
+    }
   } catch (e) {
     console.log(e);
   }
@@ -2061,28 +2230,25 @@ const slidesFor4k = [
       "https://florimondi.ru/upload/resize_cache/webp/iblock/db3/nmugxa8378en403el40i4mi7p3hy1lcf.webp",
     caption:
       "✨ Яркий букет на день рождения из 9 кустовых пионовидных роз.\n💰 Цена:3 590 ₽",
-    url: "https://florimondi.ru/catalog/monobukety/yarkiy-buket-iz-9-kustovykh-pionovidnykh-roz/",
   },
+
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/187/cct4r30fwjhc1x7xryip9vrbehirkjfj.webp",
     caption:
       "🌸 Монобукет из кустовой пионовидной розы и веточек эвкалипта.\n💰 Цена: 3 990 ₽",
-    url: "https://florimondi.ru/catalog/monobukety/monobuket-iz-kustovoy-pionovidnoy-rozy-i-vetochek-evkalipta/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/0df/xzwnwq81t5w3n66id34ldlboguoqc3s1.webp",
     caption:
       "💜 Букет на день рождения из 17 кружевных диантусов с эвкалиптом.\n💰 Цена: 4 590 ₽",
-    url: "https://florimondi.ru/catalog/monobukety/buket-iz-17-kruzhevnykh-diantusov-s-evkaliptom/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/4bf/u4p200na4f5frr9dm7iru00ffwyfb5nk.webp",
     caption:
       "🌷 Большой букет из 35 кустовых пионовидных роз Мисти Баблз.\n💰 Цена: 9 990 ₽",
-    url: "https://florimondi.ru/catalog/monobukety/buket-iz-35-kustovykh-pionovidnykh-roz-misti-bablz/",
   },
 ];
 
@@ -2092,25 +2258,21 @@ const slidesFor7k = [
       "https://florimondi.ru/upload/resize_cache/webp/iblock/45e/hxdwi73xqzpqay03h9a0kfrs2wxyi0d9.webp",
     caption:
       "💖 Корзина на день рождения «Пинк» с французскими розами и клематисом.\n💰 Цена: 9 990 ₽",
-    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-pink-s-frantsuzskimi-rozami-i-klematisom/",
   },
   {
     photo:
       "https://florimondi.ru/upload/iblock/149/ytt3g4qbus3u5vdqvr5gjorgkxzlq06d.jpg",
-    caption: "🌿Корзина с фруктами «Смузи».\n💰 12 590 ₽",
-    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-fruktami-smuzi/",
+    caption: "🌿Корзина с фруктами «Смузи».\n💰Цена: 12 590 ₽",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/92e/2zqkdo6j1b3fvuyg2unvyu4gd0e547al.webp",
     caption: '🌷 Большая корзина с цветами "Райский сад".\n💰 Цена:12 990 ₽',
-    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-tsvetami-rayskiy-sad/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/4e3/0bd85tx3ecfhlfobm48ksgn3y3m1xwuq.webp",
     caption: "🌸Большая корзина с цветами «Магия чувств».\n💰 Цена: 19 990 ₽",
-    url: "https://florimondi.ru/catalog/korziny-tsvetov/korzina-s-tsvetami-magiya-chuvstv/",
   },
 ];
 
@@ -2119,25 +2281,21 @@ const slidesFor10k = [
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/976/0e7kl2ypajff6n6bbr00xwzvdy53jjtw.webp",
     caption: `🌺 Шляпная коробочка с садовой розой и маттиолой ✨ \n💰 Цена: 3 990 ₽`,
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-sadovoy-rozoy-i-mattioloy/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/1ec/41lapirmcai6t3p6p7fvut006fb1ne4z.webp",
     caption: `🌸 Шляпная коробочка с алыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-alymi-frantsuzskimi-rozami/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/2fb/5pqavdop6at62g9bemvtmhnaamj2xdwc.webp",
     caption: `🌸 Шляпная коробочка с лавандовыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-lavandovymi-frantsuzskimi-rozami/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/b20/79c848yng6gl3qxfwnlvsim3yxrvv65i.webp",
     caption: `🌸 Шляпная коробочка с малиновыми французскими розами ☕\n💰 Цена: 3 990 ₽`,
-    url: "https://florimondi.ru/catalog/korobki-tsvetov/shlyapnaya-korobochka-s-malinovymi-frantsuzskimi-rozami/",
   },
 ];
 
@@ -2147,226 +2305,35 @@ const slidesFor10moreK = [
       "https://florimondi.ru/upload/resize_cache/webp/iblock/7fe/y5oxh2n0nw3ifo85d6flb3onevhzt15v.webp",
     caption:
       "🌸 Монобукет из кустовой пионовидной розы и веточек эвкалипта \n💰 Цена: 3 990 ₽",
-    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/monobuket-iz-kustovoy-pionovidnoy-rozy-i-vetochek-evkalipta/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/718/leokgv9ajcxhppm6rbp54zy8k1ebko96.webp",
     caption: '💐 Букет с розой Вайт О\'Хара "Замечательный" \n💰 Цена: 4 290 ₽',
-    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/buket-s-rozoy-vayt-o-khara-zamechatelnyy/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/706/m1wnj9peusz3ji4hlwe8hjl79igblbzv.webp",
     caption:
       '🎁 Авторский букет из садовой розы и нарциссов "Диковинный". \n💰 Цена: 4 590 ₽',
-    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/avtorskiy-buket-iz-sadovoy-rozy-i-nartsissov-dikovinnyy/",
   },
   {
     photo:
       "https://florimondi.ru/upload/resize_cache/webp/iblock/fa6/x1c95xh7fbaysgmnxo0v7usmusenv6km.webp",
     caption:
       "🎁 Раскидистый букет с лизиантусом и кустовой пионовидной розой. \n💰 Цена: 4 990 ₽",
-    url: "https://florimondi.ru/catalog/raskidistye-bukety-tsvetov/raskidistyy-buket-s-liziantusom-i-kustovoy-pionovidnoy-rozoy/",
   },
 ];
+function parseCallbackData(callbackData) {
+  const match = callbackData.match(/^vitrina_(\d+)\+?k_(\d+)$/);
+  if (!match) return null;
 
-async function sendSlide(chatId, slideIndex, message_id) {
-  const user = await collectionUser.findOne({ userId: chatId });
-  if (!user) {
-    return;
-  }
-  const keyboardFor10moreK = {
-    inline_keyboard: [
-      [
-        slidesFor10moreK[slideIndex]?.url
-          ? { text: "Купить", url: slidesFor10moreK[slideIndex].url }
-          : { text: "Купить", callback_data: "disable" },
-      ],
-      [
-        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
-        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
-      ],
-    ],
-  };
-  // Inline-кнопки для навигации
-  const keyboardFor10k = {
-    inline_keyboard: [
-      [
-        slidesFor10k[slideIndex]?.url
-          ? { text: "Купить", url: slidesFor10k[slideIndex].url } // Используем URL, если он есть
-          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
-      ],
-      [
-        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
-        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
-      ],
-    ],
-  };
-  // Деактивация кнопки "Назад" на первом слайде
-  const keyboardFor7k = {
-    inline_keyboard: [
-      [
-        slidesFor7k[slideIndex]?.url
-          ? { text: "Купить", url: slidesFor7k[slideIndex].url } // Используем URL, если он есть
-          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
-      ],
-      [
-        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
-        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
-      ],
-    ],
-  };
-  const keyboardFor4k = {
-    inline_keyboard: [
-      [
-        slidesFor4k[slideIndex]?.url
-          ? { text: "Купить", url: slidesFor4k[slideIndex].url } // Используем URL, если он есть
-          : { text: "Купить", callback_data: "disable" }, // Заглушка, если ссылки нет
-      ],
-      [
-        { text: "⬅️ Назад", callback_data: `prev_${slideIndex}` },
-        { text: "Вперёд ➡️", callback_data: `next_${slideIndex}` },
-      ],
-    ],
-  };
-  if (slideIndex == 0) {
-  }
-  // Изменение кнопок в зависимости от текущего слайда
-  if (slideIndex === 0 && user.processType === "catalog_price=4000") {
-    keyboardFor4k.inline_keyboard[0][0] = {
-      text: "Купить",
-      callback_data: `buy_${slideIndex}`,
-      url: slidesFor4k[slideIndex].url,
-    };
-    keyboardFor4k.inline_keyboard[1][0] = {
-      text: "⬅️ Назад",
-      callback_data: `disable`,
-    };
-  }
-  if (slideIndex === 0 && user.processType === "catalog_price=8000") {
-    keyboardFor7k.inline_keyboard[0][0] = {
-      text: "Купить",
-      callback_data: `buy_${slideIndex}`,
-      url: slidesFor7k[slideIndex].url,
-    };
-    keyboardFor7k.inline_keyboard[1][0] = {
-      text: "⬅️ Назад",
-      callback_data: `disable`,
-    };
-  }
-  if (
-    slideIndex === slidesFor4k.length - 2 &&
-    user.processType === "catalog_price=4000"
-  ) {
-    keyboardFor4k.inline_keyboard[1][0] = {
-      text: "⬅️ Назад",
-      callback_data: `prev_${slideIndex}`,
-    };
-  }
-  if (
-    slideIndex === slidesFor7k.length - 2 &&
-    user.processType === "catalog_price=8000"
-  ) {
-    keyboardFor7k.inline_keyboard[1][0] = {
-      text: "⬅️ Назад",
-      callback_data: `prev_${slideIndex}`,
-    };
-  }
-  if (
-    slideIndex === slidesFor4k.length - 1 &&
-    user.processType === "catalog_price=4000"
-  ) {
-    keyboardFor4k.inline_keyboard[1][1] = {
-      text: "Вперёд ➡️",
-      callback_data: "disable",
-    };
-  }
-  if (
-    slideIndex === slidesFor7k.length - 1 &&
-    user.processType === "catalog_price=8000"
-  ) {
-    keyboardFor7k.inline_keyboard[1][1] = {
-      text: "Вперёд ➡️",
-      callback_data: "disable",
-    };
-  }
-  if (
-    slideIndex === slidesFor10k.length - 1 &&
-    user.processType === "catalog_price=10000"
-  ) {
-    keyboardFor10k.inline_keyboard[1][1] = {
-      text: "Вперёд ➡️",
-      callback_data: "disable",
-    };
-  }
-  if (
-    slideIndex === slidesFor10moreK.length - 1 &&
-    user.processType === "catalog_price=10000++"
-  ) {
-    keyboardFor10moreK.inline_keyboard[1][1] = {
-      text: "Вперёд ➡️",
-      callback_data: "disable",
-    };
-  }
-  if (user.processType === "catalog_price=4000") {
-    console.log(user.processType);
+  const price = match[1]; // Значение между vitrina_ и _k
+  const lastNum = match[2]; // Последнее число
 
-    const slide = slidesFor4k[slideIndex];
-    const message = await bot.sendPhoto(chatId, slide.photo, {
-      caption: slide.caption,
-      reply_markup: keyboardFor4k,
-    });
-
-    await collectionUser.updateOne(
-      { userId: chatId },
-      { $set: { message_to_delete: message.message_id } },
-      {
-        new: true,
-      }
-    );
-  } else if (user.processType === "catalog_price=8000") {
-    const slide = slidesFor7k[slideIndex];
-    const message = await bot.sendPhoto(chatId, slide.photo, {
-      caption: slide.caption,
-      reply_markup: keyboardFor7k,
-    });
-    await collectionUser.updateOne(
-      { userId: chatId },
-      { $set: { message_to_delete: message.message_id } },
-      {
-        new: true,
-      }
-    );
-  } else if (user.processType === "catalog_price=10000") {
-    const slide = slidesFor10k[slideIndex];
-    const message = await bot.sendPhoto(chatId, slide.photo, {
-      caption: slide.caption,
-      reply_markup: keyboardFor10k,
-    });
-    await collectionUser.updateOne(
-      { userId: chatId },
-      { $set: { message_to_delete: message.message_id } },
-      {
-        new: true,
-      }
-    );
-  } else if (user.processType === "catalog_price=10000++") {
-    const slide = slidesFor10moreK[slideIndex];
-    const message = await bot.sendPhoto(chatId, slide.photo, {
-      caption: slide.caption,
-      reply_markup: keyboardFor10moreK,
-    });
-    await collectionUser.updateOne(
-      { userId: chatId },
-      { $set: { message_to_delete: message.message_id } },
-      {
-        new: true,
-      }
-    );
-  }
-  // Отправляем сообщение с кнопками
+  return { price, lastNum };
 }
+
 app.listen(3003, () => {
   console.log(`Сервер запущен на http://localhost:${3000}`);
 });
