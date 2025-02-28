@@ -1993,6 +1993,8 @@ bot.on("callback_query", async (query) => {
         // Форматируем в DD.MM.YYYY
         const formattedMonth = String(month).padStart(2, "0");
         const formattedDay = String(day).padStart(2, "0");
+        console.log(formattedDay, formattedMonth, year);
+
         const formattedDate = `${formattedDay}.${formattedMonth}.${year}`;
         await bot.sendMessage(
           chatId,
