@@ -550,6 +550,7 @@ bot.onText(/\/start/, async (msg) => {
       description: "Возвращает вас в главное меню",
     },
   ]);
+  console.log("start");
 
   await bot.sendMessage(
     chatId,
