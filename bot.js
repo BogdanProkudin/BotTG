@@ -152,11 +152,11 @@ async function processPaymentNotification(req, res) {
           `💰 *Цена:* ${user.price}\n` +
           `📧 *Email:* ${EMail}\n` +
           `📷 *Ссылка на фото:* [Открыть фото](${photoUrl})\n` +
-          `📞 *Номер телефона получателя:* ${
-            user.recipientNumber ? user.recipientNumber : "Не указан номер"
-          }\n` +
           `📞 *Номер телефона заказчика:* ${
             user.clientNumber ? user.clientNumber : "Не указан номер"
+          }\n` +
+          `📞 *Номер телефона получателя:* ${
+            user.recipientNumber ? user.recipientNumber : "Не указан номер"
           }\n` +
           `📍 *Адрес доставки:* ${
             user.address ? user.address : "Не указан адрес"
@@ -164,21 +164,11 @@ async function processPaymentNotification(req, res) {
           `📅 *Дата доставки:* ${
             user.selectedDate ? user.selectedDate : "Не указана дата"
           }\n` +
-          `📅 *Дальность доставки:* ${
-            user.MKAD ? user.MKAD : "у заказчика самовывоз"
-          }\n` +
-          `⏰ *${
+          `⏰Время доставки:* ${
             user.address !== "Самовывоз"
               ? "Время доставки"
               : "Удобное время для самовывоза"
           }* ${user.time ? user.time : "Не указано время"}\n` +
-          `📍 *Кто получатель:* ${
-            user.whoIsClient && user.whoIsClient !== "Я"
-              ? user.whoIsClient
-              : user.whoIsClient
-              ? "Сам заказчик"
-              : "Не указан адрес"
-          }\n` +
           `📝 *Текст для открытки:* ${
             user.postcard ? user.postcard : "Не указано"
           }\n\n` +
@@ -195,11 +185,11 @@ async function processPaymentNotification(req, res) {
           `💰 *Цена:* ${user.price}\n` +
           `📧 *Email:* ${EMail}\n` +
           `📷 *Ссылка на фото:* [Открыть фото](${photoUrl})\n` +
-          `📞 *Номер телефона получателя:* ${
-            user.recipientNumber ? user.recipientNumber : "Не указан номер"
-          }\n` +
           `📞 *Номер телефона заказчика:* ${
             user.clientNumber ? user.clientNumber : "Не указан номер"
+          }\n` +
+          `📞 *Номер телефона получателя:* ${
+            user.recipientNumber ? user.recipientNumber : "Не указан номер"
           }\n` +
           `📍 *Адрес доставки:* ${
             user.address ? user.address : "Не указан адрес"
@@ -210,6 +200,9 @@ async function processPaymentNotification(req, res) {
           `⏰ *Время доставки/Удобное время для самовывоза:* ${
             user.time ? user.time : "Не указано время"
           }\n` +
+          `📝 *Текст для открытки:* ${
+            user.postcard ? user.postcard : "Не указано"
+          }\n\n` +
           `📝 *Дополнительная информация:* ${
             user.extraInformation ? user.extraInformation : "Не указано"
           }\n\n`,
@@ -1998,8 +1991,9 @@ bot.on("callback_query", async (query) => {
         const [year, month, day] = rawDate.split("-");
 
         // Форматируем в DD.MM.YYYY
-        const formattedDate = `${day}.${month}.${year}`;
-
+        const formattedMonth = String(month).padStart(2, "0");
+        const formattedDay = String(day).padStart(2, "0");
+        const formattedDate = `${formattedDay}.${formattedMonth}.${year}`;
         await bot.sendMessage(
           chatId,
           `Вы выбрали дату: *${formattedDate}*. Теперь укажите адрес доставки. Вы можете ввести его следующим образом:\n\n` +
