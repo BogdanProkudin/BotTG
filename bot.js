@@ -690,9 +690,11 @@ bot.on("text", async (msg) => {
         return;
       }
       const deletedPhotoIds = user.photo_to_delete;
-      deletedPhotoIds.forEach((photoId) => {
-        bot.deleteMessage(chatId, photoId);
-      });
+      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
+        deletedPhotoIds.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
       await bot.sendMessage(chatId, message, {
         reply_markup: {
           keyboard: [
@@ -750,7 +752,7 @@ bot.on("text", async (msg) => {
         },
       });
       const deletedPhotoIds = user.photo_to_delete;
-      if (deletedPhotoIds.length > 0) {
+      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
         deletedPhotoIds.forEach((photoId) => {
           bot.deleteMessage(chatId, photoId);
         });
@@ -906,7 +908,7 @@ bot.on("text", async (msg) => {
         return;
       }
       const deletedPhotoIds = await user.photo_to_delete;
-      if (deletedPhotoIds.length > 0) {
+      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
         deletedPhotoIds.forEach((photoId) => {
           bot.deleteMessage(chatId, photoId);
         });
