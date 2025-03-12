@@ -578,7 +578,9 @@ bot.onText(/\/add/, async (msg) => {
   if (!collectionUser) {
     return;
   }
-
+  if (userId !== 833391720) {
+    return;
+  }
   const user = await collectionUser.findOne({ userId });
   if (user && user.isInProcess) {
     await bot.sendMessage(
@@ -614,6 +616,9 @@ bot.onText(/\/edit/, async (msg) => {
     return; // Игнорируем команды в группе
   }
   if (!collectionUser) {
+    return;
+  }
+  if (chatId !== 833391720) {
     return;
   }
   const user = await collectionUser.findOne({ userId });
@@ -1601,11 +1606,11 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 1
+          ? 750
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 2
+          ? 950
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 3
+          ? 2000
           : 0;
       const outSum = (await user.price) + extraPrice;
 
@@ -1652,11 +1657,11 @@ bot.on("message", async (msg) => {
       const extraPrice =
         user &&
         (await user.MKAD) === "Доставка по Москве в пределах МКАД — 750 ₽"
-          ? 1
+          ? 750
           : user.MKAD === "Курьер за МКАД- Ближнее Подмосковье — 950 ₽"
-          ? 2
+          ? 950
           : user.MKAD === "Курьер за МКАД - область — 2000 ₽"
-          ? 3
+          ? 2000
           : 0;
       const outSum = (await user.price) + extraPrice;
 
