@@ -578,7 +578,7 @@ bot.onText(/\/add/, async (msg) => {
   if (!collectionUser) {
     return;
   }
-  if (userId !== 833391720) {
+  if (userId !== 833391720 || userId !== 6103809590 || userId !== 5600075299) {
     return;
   }
   const user = await collectionUser.findOne({ userId });
@@ -618,7 +618,7 @@ bot.onText(/\/edit/, async (msg) => {
   if (!collectionUser) {
     return;
   }
-  if (chatId !== 833391720) {
+  if (userId !== 833391720 || userId !== 6103809590 || userId !== 5600075299) {
     return;
   }
   const user = await collectionUser.findOne({ userId });
@@ -645,279 +645,25 @@ bot.on("text", async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const text = msg.text.trim();
-  if (!collectionUser) {
-    return;
-  }
-  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
-  if (chatType === "supergroup") {
-    return; // Игнорируем команды в группе
-  }
-  const user = await collectionUser.findOne({ userId });
-  if (text === "Вернуться в главное меню" && user.processType === "finished") {
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: false, processType: null } }
-    );
-
-    await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
-      reply_markup: {
-        keyboard: [
-          ["Онлайн-витрина", "Наш каталог"],
-          ["О нас", "Мы на карте", "Наш сайт"],
-        ],
-        resize_keyboard: true, // Делает кнопки компактными
-        one_time_keyboard: true, // Убирает клавиатуру после нажатия
-      },
-    });
-    await collectionUser.updateOne(
-      { userId },
-      { $set: { isInProcess: false, processType: null } }
-    );
-    return;
-  }
-
-  if (text === "Назад" && user.processType !== "finished") {
+  try {
+    if (!collectionUser) {
+      return;
+    }
+    const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+    if (chatType === "supergroup") {
+      return; // Игнорируем команды в группе
+    }
+    const user = await collectionUser.findOne({ userId });
     if (
-      (user && user.processType === "catalog_price=4000") ||
-      (user && user.processType === "catalog_price=8000") ||
-      (user && user.processType === "catalog_price=10000") ||
-      (user && user.processType === "catalog_price=10000++")
+      text === "Вернуться в главное меню" &&
+      user.processType === "finished"
     ) {
-      const message = await cancelProcess(userId, collectionUser);
-
-      const user = await collectionUser.findOne({ userId });
-      if (!user) {
-        return;
-      }
-      const deletedPhotoIds = user.photo_to_delete;
-      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
-        deletedPhotoIds.forEach((photoId) => {
-          bot.deleteMessage(chatId, photoId);
-        });
-      }
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [
-            ["Монобукеты", "Корзины"],
-
-            ["Раскидистые букеты", "Коробки"],
-            ["Назад"],
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
       await collectionUser.updateOne(
         { userId },
-        { $set: { message_to_delete: null, photo_to_delete: [] } }
+        { $set: { isInProcess: false, processType: null } }
       );
-      return;
-    }
-    if (user && user.processType && user.processType === "payment") {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Перейти к оплате"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (user && user.processType && user.processType === "prepare_payment") {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Перейти к оплате"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (user && user.processType && user.processType === "select_date") {
-      const message = await cancelProcess(userId, collectionUser);
-      const user = await collectionUser.findOne({ userId });
-      if (!user) {
-        return;
-      }
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [
-            ["Онлайн-витрина", "Наш каталог"],
-            ["О нас", "Мы на карте", "Наш сайт"],
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      const deletedPhotoIds = user.photo_to_delete;
-      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
-        deletedPhotoIds.forEach((photoId) => {
-          bot.deleteMessage(chatId, photoId);
-        });
-      }
-      await bot.deleteMessage(chatId, user.message_to_delete);
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { message_to_delete: null, photo_to_delete: [] } }
-      );
-      return;
-    }
-    if (user && user.processType && user.processType === "who_is_client") {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (user && user.processType && user.processType === "client_number") {
-      const message = await cancelProcess(userId, collectionUser);
-      const availableTimes = getAvailableShippingTime(user);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [...availableTimes, ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "recipient_number" &&
-      (user.whoIsClient === "Другой человек" || user.whoIsClient === "2")
-    ) {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Я", "Другой человек"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (user && user.processType && user.processType === "extra_information") {
-      console.log("exit");
 
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Перейти дальше"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "postcard" &&
-      user.address === "Самовывоз"
-    ) {
-      console.log("exit где нужно");
-
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "postcard" &&
-      (user.whoIsClient === "Я" || user.whoIsClient === "1")
-    ) {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Я", "Другой человек"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "recipient_number" &&
-      user.address !== "Самовывоз"
-    ) {
-      const message = await cancelProcess(userId, collectionUser);
-      const availableTimes = getAvailableShippingTime(user);
-
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [...availableTimes, ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      user &&
-      user.processType &&
-      user.processType === "postcard" &&
-      (user.whoIsClient === "Другой человек" ||
-        user.whoIsClient === "Я" ||
-        user.whoIsClient === "1" ||
-        user.whoIsClient === "2")
-    ) {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    }
-    if (
-      (user && user.processType && user.processType === "send_location") ||
-      (user && user.processType && user.processType === "enter_address") ||
-      (user && user.processType && user.processType === "select_time")
-    ) {
-      const message = await cancelProcess(userId, collectionUser);
-      await bot.sendMessage(chatId, message, {
-        reply_markup: {
-          keyboard: [["Ввести адрес", "Самовывоз"], ["Назад"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
-      return;
-    } else {
-      const message = await cancelProcess(userId, collectionUser);
-      const user = await collectionUser.findOne({ userId });
-      if (!user) {
-        return;
-      }
-      const deletedPhotoIds = await user.photo_to_delete;
-      if (deletedPhotoIds && deletedPhotoIds.length > 0) {
-        deletedPhotoIds.forEach((photoId) => {
-          bot.deleteMessage(chatId, photoId);
-        });
-      }
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { photo_to_delete: [] } }
-      );
-      await bot.sendMessage(chatId, message, {
+      await bot.sendMessage(chatId, "Вы вернулись в главное меню.", {
         reply_markup: {
           keyboard: [
             ["Онлайн-витрина", "Наш каталог"],
@@ -927,7 +673,272 @@ bot.on("text", async (msg) => {
           one_time_keyboard: true, // Убирает клавиатуру после нажатия
         },
       });
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { isInProcess: false, processType: null } }
+      );
+      return;
     }
+
+    if (text === "Назад" && user.processType !== "finished") {
+      if (
+        (user && user.processType === "catalog_price=4000") ||
+        (user && user.processType === "catalog_price=8000") ||
+        (user && user.processType === "catalog_price=10000") ||
+        (user && user.processType === "catalog_price=10000++")
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+
+        const user = await collectionUser.findOne({ userId });
+        if (!user) {
+          return;
+        }
+        const deletedPhotoIds = user.photo_to_delete;
+        if (deletedPhotoIds && deletedPhotoIds.length > 0) {
+          deletedPhotoIds.forEach((photoId) => {
+            bot.deleteMessage(chatId, photoId);
+          });
+        }
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [
+              ["Монобукеты", "Корзины"],
+
+              ["Раскидистые букеты", "Коробки"],
+              ["Назад"],
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { message_to_delete: null, photo_to_delete: [] } }
+        );
+        return;
+      }
+      if (user && user.processType && user.processType === "payment") {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Перейти к оплате"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (user && user.processType && user.processType === "prepare_payment") {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Перейти к оплате"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (user && user.processType && user.processType === "select_date") {
+        const message = await cancelProcess(userId, collectionUser);
+        const user = await collectionUser.findOne({ userId });
+        if (!user) {
+          return;
+        }
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [
+              ["Онлайн-витрина", "Наш каталог"],
+              ["О нас", "Мы на карте", "Наш сайт"],
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        const deletedPhotoIds = user.photo_to_delete;
+        if (deletedPhotoIds && deletedPhotoIds.length > 0) {
+          deletedPhotoIds.forEach((photoId) => {
+            bot.deleteMessage(chatId, photoId);
+          });
+        }
+        await bot.deleteMessage(chatId, user.message_to_delete);
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { message_to_delete: null, photo_to_delete: [] } }
+        );
+        return;
+      }
+      if (user && user.processType && user.processType === "who_is_client") {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (user && user.processType && user.processType === "client_number") {
+        const message = await cancelProcess(userId, collectionUser);
+        const availableTimes = getAvailableShippingTime(user);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [...availableTimes, ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "recipient_number" &&
+        (user.whoIsClient === "Другой человек" || user.whoIsClient === "2")
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Я", "Другой человек"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "extra_information"
+      ) {
+        console.log("exit");
+
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Перейти дальше"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "postcard" &&
+        user.address === "Самовывоз"
+      ) {
+        console.log("exit где нужно");
+
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "postcard" &&
+        (user.whoIsClient === "Я" || user.whoIsClient === "1")
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Я", "Другой человек"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "recipient_number" &&
+        user.address !== "Самовывоз"
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+        const availableTimes = getAvailableShippingTime(user);
+
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [...availableTimes, ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        user &&
+        user.processType &&
+        user.processType === "postcard" &&
+        (user.whoIsClient === "Другой человек" ||
+          user.whoIsClient === "Я" ||
+          user.whoIsClient === "1" ||
+          user.whoIsClient === "2")
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      }
+      if (
+        (user && user.processType && user.processType === "send_location") ||
+        (user && user.processType && user.processType === "enter_address") ||
+        (user && user.processType && user.processType === "select_time")
+      ) {
+        const message = await cancelProcess(userId, collectionUser);
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [["Ввести адрес", "Самовывоз"], ["Назад"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+        return;
+      } else {
+        const message = await cancelProcess(userId, collectionUser);
+        const user = await collectionUser.findOne({ userId });
+        if (!user) {
+          return;
+        }
+        const deletedPhotoIds = await user.photo_to_delete;
+        if (deletedPhotoIds && deletedPhotoIds.length > 0) {
+          deletedPhotoIds.forEach((photoId) => {
+            bot.deleteMessage(chatId, photoId);
+          });
+        }
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { photo_to_delete: [] } }
+        );
+        await bot.sendMessage(chatId, message, {
+          reply_markup: {
+            keyboard: [
+              ["Онлайн-витрина", "Наш каталог"],
+              ["О нас", "Мы на карте", "Наш сайт"],
+            ],
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.log("Error has to fix", e);
   }
 });
 
