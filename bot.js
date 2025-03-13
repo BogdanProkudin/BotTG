@@ -578,7 +578,12 @@ bot.onText(/\/add/, async (msg) => {
   if (!collectionUser) {
     return;
   }
-  if (userId !== 833391720 || userId !== 6103809590 || userId !== 5600075299) {
+  if (
+    userId !== 833391720 ||
+    userId !== 6103809590 ||
+    userId !== 5600075299 ||
+    userId !== 1941288913
+  ) {
     return;
   }
   const user = await collectionUser.findOne({ userId });
