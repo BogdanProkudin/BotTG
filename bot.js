@@ -582,7 +582,8 @@ bot.onText(/\/add/, async (msg) => {
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
-    userId !== 1941288913
+    userId !== 1941288913 &&
+    userId !== 392804404
   ) {
     return;
   }
@@ -627,7 +628,8 @@ bot.onText(/\/edit/, async (msg) => {
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
-    userId !== 1941288913
+    userId !== 1941288913 &&
+    userId !== 392804404
   ) {
     return;
   }
