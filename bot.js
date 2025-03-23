@@ -652,6 +652,50 @@ bot.onText(/\/edit/, async (msg) => {
   });
 });
 
+bot.onText(/\/delete/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
+  const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
+  if (chatType === "supergroup") {
+    return; // Игнорируем команды в группе
+  }
+  if (!collectionUser) {
+    return;
+  }
+  if (
+    userId !== 833391720 &&
+    userId !== 6103809590 &&
+    userId !== 5600075299 &&
+    userId !== 1941288913 &&
+    userId !== 5557790556
+  ) {
+    return;
+  }
+  const user = await collectionUser.findOne({ userId });
+  if (user && user.isInProcess) {
+    await bot.sendMessage(
+      chatId,
+      "Вы не можете начать новое действие, пока не завершите текущее."
+    );
+    return;
+  }
+  const index = 2; // Индекс документа, который нужно удалить (начинается с 0)
+
+  collectionProduct
+    .find()
+    .skip(index)
+    .limit(1)
+    .toArray()
+    .then((docs) => {
+      if (docs.length > 0) {
+        collection.deleteOne({ _id: docs[0]._id });
+        console.log("Удален документ с _id:", docs[0]._id);
+      } else {
+        console.log("Документ с таким индексом не найден");
+      }
+    });
+});
+
 // Обработчик кнопки "Назад"
 bot.on("text", async (msg) => {
   const chatId = msg.chat.id;
@@ -1152,7 +1196,7 @@ bot.on("message", async (msg) => {
           media: product.photo,
           caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(0, 20);
+        .slice(0, 15);
 
       await bot.sendMediaGroup(chatId, mediaGroup);
 
@@ -1162,7 +1206,7 @@ bot.on("message", async (msg) => {
       );
 
       const keyboard = products
-        .slice(0, 20)
+        .slice(0, 15)
         .map((product, index) => [
           `№${index + 1} ${
             product.price ? `- ${product.price} ₽` : "Без цены"

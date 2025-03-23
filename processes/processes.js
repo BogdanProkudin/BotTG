@@ -27,6 +27,19 @@ export async function startEditProcess(userId, collectionUser) {
   );
   return "Введите порядковый номер товара, который хотите отредактировать.";
 }
+export async function deleteProduct(userId, collectionUser) {
+  const user = await collectionUser.findOne({ userId });
+  if (user && user.isInProcess) {
+    return "Вы уже находитесь в процессе редактирования товара. Пожалуйста, завершите текущий процесс или отмените его.";
+  }
+
+  await collectionUser.updateOne(
+    { userId },
+    { $set: { isInProcess: true, step: "getIndex", processType: "delete" } },
+    { upsert: true }
+  );
+  return "Введите порядковый номер товара, который хотите удалить.";
+}
 
 // Функция отмены процесса
 export async function cancelProcess(userId, collectionUser) {
