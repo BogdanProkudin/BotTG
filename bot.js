@@ -1152,7 +1152,7 @@ bot.on("message", async (msg) => {
           media: product.photo,
           caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(0, 10);
+        .slice(0, 20);
 
       await bot.sendMediaGroup(chatId, mediaGroup);
 
@@ -1162,7 +1162,7 @@ bot.on("message", async (msg) => {
       );
 
       const keyboard = products
-        .slice(0, 6)
+        .slice(0, 20)
         .map((product, index) => [
           `№${index + 1} ${
             product.price ? `- ${product.price} ₽` : "Без цены"
