@@ -688,7 +688,7 @@ bot.onText(/\/delete/, async (msg) => {
     .toArray()
     .then((docs) => {
       if (docs.length > 0) {
-        collection.deleteOne({ _id: docs[0]._id });
+        collectionProduct.deleteOne({ _id: docs[0]._id });
         console.log("Удален документ с _id:", docs[0]._id);
       } else {
         console.log("Документ с таким индексом не найден");
