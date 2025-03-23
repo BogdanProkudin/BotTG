@@ -679,21 +679,35 @@ bot.onText(/\/delete/, async (msg) => {
     );
     return;
   }
-  const index = 2; // Индекс документа, который нужно удалить (начинается с 0)
+  await bot.sendMessage(
+    chatId,
+    "Отправьте порядковый номер товара, который хотите удалить."
+  );
+  await collectionUser.updateOne(
+    { userId },
+    {
+      $set: {
+        isInProcess: true,
 
-  collectionProduct
-    .find()
-    .skip(index)
-    .limit(1)
-    .toArray()
-    .then((docs) => {
-      if (docs.length > 0) {
-        collectionProduct.deleteOne({ _id: docs[0]._id });
-        console.log("Удален документ с _id:", docs[0]._id);
-      } else {
-        console.log("Документ с таким индексом не найден");
-      }
-    });
+        processType: "delete",
+      },
+    },
+    { upsert: true }
+  );
+
+  // collectionProduct
+  //   .find()
+  //   .skip(index)
+  //   .limit(1)
+  //   .toArray()
+  //   .then((docs) => {
+  //     if (docs.length > 0) {
+  //       collectionProduct.deleteOne({ _id: docs[0]._id });
+  //       console.log("Удален документ с _id:", docs[0]._id);
+  //     } else {
+  //       console.log("Документ с таким индексом не найден");
+  //     }
+  //   });
 });
 
 // Обработчик кнопки "Назад"
@@ -1172,11 +1186,23 @@ bot.on("message", async (msg) => {
         user.processType !== "client_number" &&
         user.processType !== "who_is_client" &&
         user.processType !== "postcard" &&
-        user.processType !== "prepare_payment")
+        user.processType !== "prepare_payment" &&
+        user.processType !== "delete")
     ) {
       console.log("User is in process");
 
       return; // Не обрабатываем, если пользователь в процессе
+    }
+
+    if (user.processType === "delete") {
+      await bot.sendMessage(chatId, "Вы ввели индекс, подтвердите удаление.", {
+        reply_markup: {
+          keyboard: [["Да", "Нет"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      return;
     }
 
     if (text === "Онлайн-витрина" && !user.isInProcess) {
