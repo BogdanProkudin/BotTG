@@ -1314,7 +1314,7 @@ bot.on("message", async (msg) => {
       const keyboard = products
         .slice(10, 20)
         .map((product, index) => [
-          `№${index + 1} ${
+          `№${index + 11} ${
             product.price ? `- ${product.price} ₽` : "Без цены"
           }`,
         ]);
@@ -1354,7 +1354,7 @@ bot.on("message", async (msg) => {
       const keyboard = products
         .slice(20, 30)
         .map((product, index) => [
-          `№${index + 1} ${
+          `№${index + 21} ${
             product.price ? `- ${product.price} ₽` : "Без цены"
           }`,
         ]);
