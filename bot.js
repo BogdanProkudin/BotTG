@@ -1292,7 +1292,7 @@ bot.on("message", async (msg) => {
           },
         }
       );
-    } else if (text === "Смотреть дальше") {
+    } else if (text === "Смотреть дальше" && user.processType === "showcase") {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
