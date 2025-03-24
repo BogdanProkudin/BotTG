@@ -1193,7 +1193,9 @@ bot.on("message", async (msg) => {
         user.processType !== "who_is_client" &&
         user.processType !== "postcard" &&
         user.processType !== "prepare_payment" &&
-        user.processType !== "delete")
+        user.processType !== "delete" &&
+        user.processType !== "showcase1" &&
+        user.processType !== "showcase2")
     ) {
       console.log("User is in process");
 
@@ -1277,7 +1279,87 @@ bot.on("message", async (msg) => {
           }`,
         ]);
 
-      keyboard.push(["Назад"]);
+      keyboard.push(["Смотреть дальше", "Назад"]);
+
+      await bot.sendMessage(
+        chatId,
+        "Это наша онлайн-витрина. Выберите товар:",
+        {
+          reply_markup: {
+            keyboard,
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+    } else if (text === "Смотреть дальше") {
+      const products = await collectionProduct
+        .find({ photo: { $exists: true } })
+        .toArray();
+      const mediaGroup = products
+        .filter((product) => product.photo)
+        .map((product, index) => ({
+          type: "photo",
+          media: product.photo,
+          caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
+        }))
+        .slice(10, 20);
+      await bot.sendMediaGroup(chatId, mediaGroup);
+
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { processType: "showcase1", isInProcess: true } }
+      );
+
+      const keyboard = products
+        .slice(10, 20)
+        .map((product, index) => [
+          `№${index + 1} ${
+            product.price ? `- ${product.price} ₽` : "Без цены"
+          }`,
+        ]);
+
+      keyboard.push(["Смотреть дальше", "Назад"]);
+
+      await bot.sendMessage(
+        chatId,
+        "Это наша онлайн-витрина. Выберите товар:",
+        {
+          reply_markup: {
+            keyboard,
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        }
+      );
+    } else if (text === "Смотреть дальше" && user.processType === "showcase1") {
+      const products = await collectionProduct
+        .find({ photo: { $exists: true } })
+        .toArray();
+      const mediaGroup = products
+        .filter((product) => product.photo)
+        .map((product, index) => ({
+          type: "photo",
+          media: product.photo,
+          caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
+        }))
+        .slice(10, 20);
+      await bot.sendMediaGroup(chatId, mediaGroup);
+
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { processType: "showcase2", isInProcess: true } }
+      );
+
+      const keyboard = products
+        .slice(20, 30)
+        .map((product, index) => [
+          `№${index + 1} ${
+            product.price ? `- ${product.price} ₽` : "Без цены"
+          }`,
+        ]);
+
+      keyboard.push(["Смотреть дальше", "Назад"]);
 
       await bot.sendMessage(
         chatId,
