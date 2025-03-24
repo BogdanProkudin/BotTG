@@ -2197,7 +2197,52 @@ bot.on("callback_query", async (query) => {
     }
     const chatId = query.message.chat.id;
     const callback_data = query.data;
+    if (callback_data === "next_product_10") {
+      const products = await collectionProduct
+        .find({ photo: { $exists: true } })
+        .toArray();
 
+      let currentIndex = user.currentIndex || 0;
+
+      // Слайд 10 товаров
+      const mediaGroup = products
+        .filter((product) => product.photo)
+        .map((product, index) => ({
+          type: "photo",
+          media: product.photo,
+          caption: `№${index + 11}: ${product.price || "Без цены"} ₽`,
+        }))
+        .slice(currentIndex, currentIndex + 10);
+
+      await bot.sendMediaGroup(chatId, mediaGroup);
+
+      await collectionUser.updateOne(
+        { chatId },
+        { $set: { currentIndex: currentIndex + 10 } }
+      );
+
+      const keyboard = [
+        {
+          text: "Смотреть дальше",
+          callback_data: "next_product_20",
+        },
+        {
+          text: "Назад",
+          callback_data: "back_from_showcase",
+        },
+      ];
+
+      await bot.sendMessage(
+        chatId,
+        "Это наша онлайн-витрина. Выберите товар:",
+        {
+          reply_markup: {
+            inline_keyboard: [keyboard],
+          },
+        }
+      );
+      return;
+    }
     console.log("callback_data", callback_data);
 
     const user = await collectionUser.findOne({ userId: query.from.id });
