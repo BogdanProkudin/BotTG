@@ -681,7 +681,14 @@ bot.onText(/\/delete/, async (msg) => {
   }
   await bot.sendMessage(
     chatId,
-    "Отправьте порядковый номер товара, который хотите удалить."
+    "Отправьте порядковый номер товара, который хотите удалить.",
+    {
+      reply_markup: {
+        keyboard: [["Назад"]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    }
   );
   await collectionUser.updateOne(
     { userId },
