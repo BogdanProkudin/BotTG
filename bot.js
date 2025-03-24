@@ -1264,8 +1264,8 @@ bot.on("message", async (msg) => {
         }))
         .slice(0, 10);
 
-      await bot.sendMediaGroup(chatId, mediaGroup);
-      console.log("mediaGroup", mediaGroup);
+      const messagePhotos = await bot.sendMediaGroup(chatId, mediaGroup);
+      console.log("messagePhotos", messagePhotos);
       await collectionUser.updateOne(
         { chatId },
         {
