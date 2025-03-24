@@ -1267,7 +1267,11 @@ bot.on("message", async (msg) => {
       await bot.sendMediaGroup(chatId, mediaGroup);
       await collectionUser.updateOne(
         { chatId },
-        { $push: { photo_to_delete: mediaGroup.map((item) => item.media) } }
+        {
+          $push: {
+            photo_to_delete: mediaGroup.map((item) => item.message_id),
+          },
+        }
       );
       await collectionUser.updateOne(
         { userId },
