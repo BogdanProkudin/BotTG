@@ -1274,7 +1274,7 @@ bot.on("message", async (msg) => {
       const keyboard = products
         .slice(0, 10)
         .map((product, index) => [
-          `№${index + 1} ${
+          `№${index + 11} ${
             product.price ? `- ${product.price} ₽` : "Без цены"
           }`,
         ]);
@@ -1301,7 +1301,7 @@ bot.on("message", async (msg) => {
         .map((product, index) => ({
           type: "photo",
           media: product.photo,
-          caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
+          caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
         }))
         .slice(10, 20);
       await bot.sendMediaGroup(chatId, mediaGroup);
@@ -1341,9 +1341,9 @@ bot.on("message", async (msg) => {
         .map((product, index) => ({
           type: "photo",
           media: product.photo,
-          caption: `№${index + 1}: ${product.price || "Без цены"} ₽`,
+          caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(10, 20);
+        .slice(20, 30);
       await bot.sendMediaGroup(chatId, mediaGroup);
 
       await collectionUser.updateOne(
