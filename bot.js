@@ -1276,7 +1276,7 @@ bot.on("message", async (msg) => {
       const keyboard = [
         {
           text: "Смотреть дальше",
-          callback_data: "next_product_10",
+          callback_data: "nextt_product_10",
         },
         {
           text: "Назад",
@@ -2197,7 +2197,7 @@ bot.on("callback_query", async (query) => {
     }
     const chatId = query.message.chat.id;
     const callback_data = query.data;
-    if (callback_data === "next_product_10") {
+    if (callback_data === "nextt_product_10") {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
