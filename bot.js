@@ -1268,27 +1268,28 @@ bot.on("message", async (msg) => {
 
       await collectionUser.updateOne(
         { userId },
-        { $set: { processType: "showcase", isInProcess: true } }
+        {
+          $set: { processType: "showcase", isInProcess: true, currentIndex: 0 },
+        }
       );
 
-      const keyboard = products
-        .slice(0, 10)
-        .map((product, index) => [
-          `№${index + 11} ${
-            product.price ? `- ${product.price} ₽` : "Без цены"
-          }`,
-        ]);
-
-      keyboard.push(["Смотреть дальше", "Назад"]);
+      const keyboard = [
+        {
+          text: "Смотреть дальше",
+          callback_data: "next_product_10",
+        },
+        {
+          text: "Назад",
+          callback_data: "back_from_showcase",
+        },
+      ];
 
       await bot.sendMessage(
         chatId,
         "Это наша онлайн-витрина. Выберите товар:",
         {
           reply_markup: {
-            keyboard,
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            inline_keyboard: [keyboard],
           },
         }
       );
@@ -1296,39 +1297,43 @@ bot.on("message", async (msg) => {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
+
+      let currentIndex = user.currentIndex || 0;
+
+      // Слайд 10 товаров
       const mediaGroup = products
         .filter((product) => product.photo)
         .map((product, index) => ({
           type: "photo",
           media: product.photo,
-          caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
+          caption: `№${index + 11}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(10, 20);
+        .slice(currentIndex, currentIndex + 10);
+
       await bot.sendMediaGroup(chatId, mediaGroup);
 
       await collectionUser.updateOne(
         { userId },
-        { $set: { processType: "showcase1", isInProcess: true } }
+        { $set: { currentIndex: currentIndex + 10 } }
       );
 
-      const keyboard = products
-        .slice(10, 20)
-        .map((product, index) => [
-          `№${index + 11} ${
-            product.price ? `- ${product.price} ₽` : "Без цены"
-          }`,
-        ]);
-
-      keyboard.push(["Смотреть дальше", "Назад"]);
+      const keyboard = [
+        {
+          text: "Смотреть дальше",
+          callback_data: "next_product_20",
+        },
+        {
+          text: "Назад",
+          callback_data: "back_from_showcase",
+        },
+      ];
 
       await bot.sendMessage(
         chatId,
         "Это наша онлайн-витрина. Выберите товар:",
         {
           reply_markup: {
-            keyboard,
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            inline_keyboard: [keyboard],
           },
         }
       );
@@ -1336,6 +1341,10 @@ bot.on("message", async (msg) => {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
+
+      let currentIndex = user.currentIndex || 20;
+
+      // Слайд 10 товаров
       const mediaGroup = products
         .filter((product) => product.photo)
         .map((product, index) => ({
@@ -1343,32 +1352,32 @@ bot.on("message", async (msg) => {
           media: product.photo,
           caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(20, 30);
+        .slice(currentIndex, currentIndex + 10);
+
       await bot.sendMediaGroup(chatId, mediaGroup);
 
       await collectionUser.updateOne(
         { userId },
-        { $set: { processType: "showcase2", isInProcess: true } }
+        { $set: { currentIndex: currentIndex + 10 } }
       );
 
-      const keyboard = products
-        .slice(20, 30)
-        .map((product, index) => [
-          `№${index + 21} ${
-            product.price ? `- ${product.price} ₽` : "Без цены"
-          }`,
-        ]);
-
-      keyboard.push(["Смотреть дальше", "Назад"]);
+      const keyboard = [
+        {
+          text: "Смотреть дальше",
+          callback_data: "next_product_30",
+        },
+        {
+          text: "Назад",
+          callback_data: "back_from_showcase",
+        },
+      ];
 
       await bot.sendMessage(
         chatId,
         "Это наша онлайн-витрина. Выберите товар:",
         {
           reply_markup: {
-            keyboard,
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            inline_keyboard: [keyboard],
           },
         }
       );
