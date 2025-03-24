@@ -1198,7 +1198,7 @@ bot.on("message", async (msg) => {
       if (isNaN(index) || index <= 0) {
         await bot.sendMessage(
           chatId,
-          "Пожалуйста, укажите корректный номер товара."
+          "Пожалуйста, укажите корректный номер товара:"
         );
         return;
       }
