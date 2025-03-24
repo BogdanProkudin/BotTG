@@ -2195,6 +2195,10 @@ bot.on("callback_query", async (query) => {
     if (!collectionUser) {
       return;
     }
+    const user = await collectionUser.findOne({ userId: query.from.id });
+    if (!user) {
+      return;
+    }
     const chatId = query.message.chat.id;
     const callback_data = query.data;
     if (callback_data === "nextt_product_10") {
@@ -2245,7 +2249,6 @@ bot.on("callback_query", async (query) => {
     }
     console.log("callback_data", callback_data);
 
-    const user = await collectionUser.findOne({ userId: query.from.id });
     if (
       callback_data.startsWith("date_") ||
       callback_data.startsWith("prev_") ||
