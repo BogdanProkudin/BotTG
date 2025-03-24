@@ -688,7 +688,6 @@ bot.onText(/\/delete/, async (msg) => {
     {
       $set: {
         isInProcess: true,
-
         processType: "delete",
       },
     },
@@ -1195,13 +1194,43 @@ bot.on("message", async (msg) => {
     }
 
     if (user.processType === "delete") {
-      await bot.sendMessage(chatId, "Вы ввели индекс, подтвердите удаление.", {
-        reply_markup: {
-          keyboard: [["Да", "Нет"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
+      const isNumber = (value) => typeof value === "number" && !isNaN(value);
+      const index = isNumber(text) ? text : null;
+      if (!index || index <= 0) {
+        await bot.sendMessage(
+          chatId,
+          "Пожалуйста, укажите корректный порядковый номер товара."
+        );
+        return;
+      }
+      collectionProduct
+        .find()
+        .skip(index)
+        .limit(1)
+        .toArray()
+        .then(async (docs) => {
+          if (docs.length > 0) {
+            collectionProduct.deleteOne({ _id: docs[0]._id });
+            console.log("Удален документ с _id:", docs[0]._id);
+            await bot.sendMessage(
+              chatId,
+              "Вы ввели индекс, товар удален. Вы вышли из действия",
+              {
+                reply_markup: {
+                  resize_keyboard: true,
+                  one_time_keyboard: true,
+                },
+              }
+            );
+            await collectionUser.updateOne(
+              { userId },
+              { $set: { isInProcess: false, processType: null } }
+            );
+          } else {
+            console.log("Документ с таким индексом не найден");
+          }
+        });
+
       return;
     }
 
