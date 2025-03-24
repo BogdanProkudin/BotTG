@@ -1270,7 +1270,7 @@ bot.on("message", async (msg) => {
         { chatId },
         {
           $push: {
-            photo_to_delete: mediaGroup.map((item) => item.message_id),
+            photo_to_delete: messagePhotos.map((item) => item.message_id),
           },
         }
       );
