@@ -1202,7 +1202,7 @@ bot.on("message", async (msg) => {
 
     if (user.processType === "delete") {
       const index = parseInt(text, 10);
-      if (isNaN(index) || (index <= 0 && text !== "Назад")) {
+      if (isNaN(index) || index <= 0 || text !== "Назад") {
         await bot.sendMessage(
           chatId,
           "Пожалуйста, укажите корректный номер товара:"
