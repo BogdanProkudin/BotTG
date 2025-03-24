@@ -1194,12 +1194,11 @@ bot.on("message", async (msg) => {
     }
 
     if (user.processType === "delete") {
-      const isNumber = (value) => typeof value === "number" && !isNaN(value);
-      const index = isNumber(text) ? text : null;
-      if (!index || index <= 0) {
+      const index = parseInt(text, 10);
+      if (isNaN(index) || index <= 0) {
         await bot.sendMessage(
           chatId,
-          "Пожалуйста, укажите корректный порядковый номер товара."
+          "Пожалуйста, укажите корректный номер товара."
         );
         return;
       }
