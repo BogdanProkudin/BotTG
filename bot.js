@@ -1265,7 +1265,10 @@ bot.on("message", async (msg) => {
         .slice(0, 10);
 
       await bot.sendMediaGroup(chatId, mediaGroup);
-
+      await collectionUser.updateOne(
+        { chatId },
+        { $push: { photo_to_delete: mediaGroup.map((item) => item.media) } }
+      );
       await collectionUser.updateOne(
         { userId },
         {
@@ -2206,9 +2209,7 @@ bot.on("callback_query", async (query) => {
         .find({ photo: { $exists: true } })
         .toArray();
 
-      let currentIndex = user.currentIndex || 0;
-
-      // Слайд 10 товаров
+      // Слайд 10-20 товаров
       const mediaGroup = products
         .filter((product) => product.photo)
         .map((product, index) => ({
@@ -2216,19 +2217,63 @@ bot.on("callback_query", async (query) => {
           media: product.photo,
           caption: `№${index + 11}: ${product.price || "Без цены"} ₽`,
         }))
-        .slice(currentIndex, currentIndex + 10);
+        .slice(10, 20);
 
       await bot.sendMediaGroup(chatId, mediaGroup);
-
-      await collectionUser.updateOne(
-        { chatId },
-        { $set: { currentIndex: currentIndex + 10 } }
-      );
+      if (user.photo_to_delete) {
+        user.photo_to_delete.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
 
       const keyboard = [
         {
           text: "Смотреть дальше",
-          callback_data: "next_product_20",
+          callback_data: "nextt_product_20",
+        },
+        {
+          text: "Назад",
+          callback_data: "back_from_showcase",
+        },
+      ];
+
+      await bot.sendMessage(
+        chatId,
+        "Это наша онлайн-витрина. Выберите товар:",
+        {
+          reply_markup: {
+            inline_keyboard: [keyboard],
+          },
+        }
+      );
+      return;
+    }
+    if (callback_data === "nextt_product_20") {
+      const products = await collectionProduct
+        .find({ photo: { $exists: true } })
+        .toArray();
+
+      // Слайд 10-20 товаров
+      const mediaGroup = products
+        .filter((product) => product.photo)
+        .map((product, index) => ({
+          type: "photo",
+          media: product.photo,
+          caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
+        }))
+        .slice(20, 30);
+
+      await bot.sendMediaGroup(chatId, mediaGroup);
+      if (user.photo_to_delete) {
+        user.photo_to_delete.forEach((photoId) => {
+          bot.deleteMessage(chatId, photoId);
+        });
+      }
+
+      const keyboard = [
+        {
+          text: "Смотреть дальше",
+          callback_data: "nextt_product_20",
         },
         {
           text: "Назад",
