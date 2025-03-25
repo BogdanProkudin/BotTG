@@ -1349,23 +1349,36 @@ bot.on("message", async (msg) => {
         },
       ];
 
-      const messageWelcome = await bot.sendMessage(
-        chatId,
-        "Выберите товар или перейдите к следующему слайду:",
-        {
-          reply_markup: {
-            inline_keyboard: [keyboard],
+      if (products.length > 10) {
+        keyboard.push([
+          {
+            text: "Предыдущий слайд",
+            callback_data: "back_from_showcase",
           },
-        }
-      );
-      await collectionUser.updateOne(
-        { userId: chatId },
-        {
-          $set: {
-            message_to_delete: [messageWelcome.message_id],
+          {
+            text: "Смотреть дальше",
+            callback_data: "nextt_product_10",
           },
-        }
-      );
+        ]);
+
+        const messageWelcome = await bot.sendMessage(
+          chatId,
+          "Выберите товар или перейдите к следующему слайду:",
+          {
+            reply_markup: {
+              inline_keyboard: [keyboard],
+            },
+          }
+        );
+        await collectionUser.updateOne(
+          { userId: chatId },
+          {
+            $set: {
+              message_to_delete: [messageWelcome.message_id],
+            },
+          }
+        );
+      }
     } else if (text.startsWith("№") && user.processType === "showcase") {
       const productIndex = parseInt(text.match(/№(\d+)/)[1], 10) - 1;
       const product = await collectionProduct
@@ -2279,15 +2292,17 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
-      const messageWelcome2 = await bot.sendMessage(
-        chatId,
-        "Выберите товар или перейдите к следующему слайду:",
-        {
-          reply_markup: {
-            inline_keyboard: [keyboard],
-          },
-        }
-      );
+      {
+        const messageWelcome2 = await bot.sendMessage(
+          chatId,
+          "Выберите товар или перейдите к следующему слайду:",
+          {
+            reply_markup: {
+              inline_keyboard: [keyboard],
+            },
+          }
+        );
+      }
       const messagesId = [
         messageWelcome.message_id,
         messageWelcome2.message_id,
