@@ -1345,24 +1345,15 @@ bot.on("message", async (msg) => {
         }
       );
 
-      const keyboard = [
-        {
-          text: "Смотреть дальше",
-          callback_data: "nextt_product_10",
-        },
-      ];
+      console.log("count", count);
 
       if (count > 10) {
-        keyboard.push([
-          {
-            text: "Предыдущий слайд",
-            callback_data: "back_from_showcase",
-          },
+        const keyboard = [
           {
             text: "Смотреть дальше",
             callback_data: "nextt_product_10",
           },
-        ]);
+        ];
 
         const messageWelcome = await bot.sendMessage(
           chatId,
@@ -2206,6 +2197,15 @@ bot.on("callback_query", async (query) => {
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
+      const count = products.length;
+
+      if (user.photo_to_delete) {
+        console.log("удаление на заходе 2");
+
+        await user.photo_to_delete.forEach(async (photoId) => {
+          await bot.deleteMessage(chatId, photoId);
+        });
+      }
 
       if (
         Array.isArray(user.message_to_delete) &&
@@ -2252,27 +2252,7 @@ bot.on("callback_query", async (query) => {
         ]);
       keyboardText.push(["Назад"]);
       const messagePhotos = await bot.sendMediaGroup(chatId, mediaGroup);
-      if (user.photo_to_delete) {
-        await user.photo_to_delete.forEach(async (photoId) => {
-          await bot.deleteMessage(chatId, photoId);
-          await collectionUser.updateOne(
-            { userId: query.from.id },
-            { $set: { photo_to_delete: [] } }
-          );
-        });
-      }
-      setTimeout(() => {
-        collectionUser.updateOne(
-          { userId: query.from.id },
-          {
-            $push: {
-              photo_to_delete: {
-                $each: messagePhotos.map((item) => item.message_id),
-              },
-            },
-          }
-        );
-      }, 1000);
+      const messagePhotoId = messagePhotos.map((item) => item.message_id);
 
       const keyboard = [
         {
@@ -2284,6 +2264,13 @@ bot.on("callback_query", async (query) => {
           callback_data: "nextt_product_20",
         },
       ];
+      const keyboard2 = [
+        {
+          text: "Предыдущий слайд",
+          callback_data: "back_from_showcase",
+        },
+      ];
+      const messagesId = [];
       const messageWelcome = await bot.sendMessage(
         chatId,
         "Вы перешли на второй слайд.",
@@ -2295,7 +2282,8 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
-      {
+      messagesId.push(messageWelcome.message_id);
+      if (count >= 21) {
         const messageWelcome2 = await bot.sendMessage(
           chatId,
           "Выберите товар или перейдите к следующему слайду:",
@@ -2305,17 +2293,28 @@ bot.on("callback_query", async (query) => {
             },
           }
         );
+        messagesId.push(messageWelcome2.message_id);
       }
-      const messagesId = [
-        messageWelcome.message_id,
-        messageWelcome2.message_id,
-      ];
+
+      if (count < 21) {
+        const messageWelcome2 = await bot.sendMessage(
+          chatId,
+          "Выберите товар или перейдите к предыдущему слайду:",
+          {
+            reply_markup: {
+              inline_keyboard: [keyboard2],
+            },
+          }
+        );
+        messagesId.push(messageWelcome2.message_id);
+      }
 
       await collectionUser.updateOne(
         { userId: chatId },
         {
           $set: {
             currentShow: 2,
+            photo_to_delete: messagePhotoId,
             message_to_delete: messagesId,
           },
         }
@@ -2323,6 +2322,15 @@ bot.on("callback_query", async (query) => {
       return;
     }
     if (callback_data === "nextt_product_20") {
+      if (user.photo_to_delete) {
+        await user.photo_to_delete.forEach(async (photoId) => {
+          await bot.deleteMessage(chatId, photoId);
+          await collectionUser.updateOne(
+            { userId: chatId },
+            { $set: { photo_to_delete: [] } }
+          );
+        });
+      }
       const products = await collectionProduct
         .find({ photo: { $exists: true } })
         .toArray();
@@ -2378,7 +2386,7 @@ bot.on("callback_query", async (query) => {
         .map((product, index) => ({
           type: "photo",
           media: product.photo,
-          caption: `№${index + 21}: ${product.price || "Без цены"} ₽`,
+          caption: `№${index + 11}: ${product.price || "Без цены"} ₽`,
         }))
         .slice(20, 30);
       const keyboardText = await products
@@ -2409,15 +2417,6 @@ bot.on("callback_query", async (query) => {
           },
         }
       );
-      if (user.photo_to_delete) {
-        user.photo_to_delete.forEach(async (photoId) => {
-          await bot.deleteMessage(chatId, photoId);
-          await collectionUser.updateOne(
-            { userId: query.from.id },
-            { $set: { photo_to_delete: [] } }
-          );
-        });
-      }
 
       setTimeout(() => {
         collectionUser.updateOne(
@@ -2447,8 +2446,6 @@ bot.on("callback_query", async (query) => {
       return;
     }
     if (callback_data === "back_from_showcase") {
-      console.log("зашел в удаление");
-
       if (user.currentShow === 2) {
         await collectionUser.updateOne(
           { userId: chatId },
@@ -2463,6 +2460,7 @@ bot.on("callback_query", async (query) => {
             await bot.deleteMessage(chatId, messageId);
           });
         }
+
         if (user.photo_to_delete) {
           await user.photo_to_delete.forEach(async (photoId) => {
             await bot.deleteMessage(chatId, photoId);
@@ -2499,19 +2497,14 @@ bot.on("callback_query", async (query) => {
           .slice(0, 10);
 
         const messagePhotos = await bot.sendMediaGroup(chatId, mediaGroup);
-        console.log(
-          "messagePhotos",
-          messagePhotos.map((item) => item.message_id)
-        );
-        const photoIds = messagePhotos.map((item) => item.message_id);
+        const messagePhotoId = messagePhotos.map((item) => item.message_id);
+        console.log("messagePhotoId", messagePhotoId);
+
         await collectionUser.updateOne(
           { userId: chatId },
           {
             $set: {
               processType: "showcase",
-            },
-            $push: {
-              photo_to_delete: { $each: photoIds },
             },
           }
         );
@@ -2559,6 +2552,7 @@ bot.on("callback_query", async (query) => {
           {
             $set: {
               message_to_delete: messagesId,
+              photo_to_delete: messagePhotoId,
             },
           }
         );
@@ -2573,11 +2567,6 @@ bot.on("callback_query", async (query) => {
             },
           }
         );
-        if (user.message_to_delete) {
-          await user.message_to_delete.forEach(async (messageId) => {
-            await bot.deleteMessage(chatId, messageId);
-          });
-        }
         if (user.photo_to_delete) {
           await user.photo_to_delete.forEach(async (photoId) => {
             await bot.deleteMessage(chatId, photoId);
@@ -2587,6 +2576,12 @@ bot.on("callback_query", async (query) => {
             );
           });
         }
+        if (user.message_to_delete) {
+          await user.message_to_delete.forEach(async (messageId) => {
+            await bot.deleteMessage(chatId, messageId);
+          });
+        }
+
         await collectionUser.updateOne(
           { userId: chatId },
           {
