@@ -1300,7 +1300,10 @@ bot.on("message", async (msg) => {
         .find({ photo: { $exists: true } })
         .toArray();
 
-      if (products.length === 0) {
+      const count = await collectionProduct.countDocuments({
+        photo: { $exists: true },
+      });
+      if (count === 0) {
         await bot.sendMessage(chatId, "Нет фото для отображения.");
         return;
       }
@@ -1349,7 +1352,7 @@ bot.on("message", async (msg) => {
         },
       ];
 
-      if (products.length > 10) {
+      if (count > 10) {
         keyboard.push([
           {
             text: "Предыдущий слайд",
