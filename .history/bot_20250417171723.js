@@ -593,8 +593,7 @@ bot.onText(/\/edit/, async (msg) => {
     userId !== 6103809590 &&
     userId !== 5600075299 &&
     userId !== 1941288913 &&
-    userId !== 5557790556 &&
-    userId !== 1218030672
+    userId !== 5557790556
   ) {
     return;
   }
