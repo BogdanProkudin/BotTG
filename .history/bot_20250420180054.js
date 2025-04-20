@@ -2613,8 +2613,7 @@ bot.on('callback_query', async (query) => {
       const calendar = generateCalendar(year, month);
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
-      const numericPrice = parseInt(price.replace(/\s|₽/g, ''), 10);
-      console.log(numericPrice, 'QQQQ', price);
+      console.log(price);
 
       console.log('selectedProduct', selectedProduct);
 
