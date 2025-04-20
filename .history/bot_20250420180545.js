@@ -2614,7 +2614,7 @@ bot.on('callback_query', async (query) => {
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
       const numericPrice = parseInt(price[1].replace(/\s|₽/g, ''), 10);
-      console.log('QQQQ', price, 'QQw', numericPrice);
+      console.log('QQQQ', price);
 
       console.log('selectedProduct', selectedProduct);
 
