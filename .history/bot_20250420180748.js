@@ -2691,7 +2691,7 @@ bot.on('callback_query', async (query) => {
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
       console.log('selectedProduct', selectedProduct);
-      const numericPrice = await parseInt(price[1].replace(/\s|₽/g, ''), 10);
+
       if (user.message_to_delete) {
         await bot.deleteMessage(chatId, user.message_to_delete);
       }
@@ -2713,7 +2713,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: numericPrice,
+            price: price[1],
           },
         }
       );

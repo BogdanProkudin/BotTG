@@ -2713,7 +2713,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: numericPrice,
+            price: price[1],
           },
         }
       );
