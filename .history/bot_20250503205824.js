@@ -83,7 +83,7 @@ async function processPaymentNotification(req, res) {
     console.log(req.body);
 
     // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-    const password2 = 'VPXkrnNyoI9865vDif2k';
+    const password2 = 'Sy6uRaE5b5Fh0NWlbXE8';
     if (!collectionUser) {
       return;
     }

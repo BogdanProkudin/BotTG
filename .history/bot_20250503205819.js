@@ -83,7 +83,7 @@ async function processPaymentNotification(req, res) {
     console.log(req.body);
 
     // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-    const password2 = 'VPXkrnNyoI9865vDif2k';
+    const password2 = 'Sy6uRaE5b5Fh0NWlbXE8';
     if (!collectionUser) {
       return;
     }
@@ -1749,7 +1749,7 @@ bot.on('message', async (msg) => {
       text !== 'Назад'
     ) {
       const merchantLogin = 'Florimnodi';
-      const password1 = 'lLj8x1UR4zvz7M7WezHS';
+      const password1 = 'Gux2OMl1lsq4HxGc12cQ';
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const extraPrice =
