@@ -1748,7 +1748,7 @@ bot.on('message', async (msg) => {
       text === 'Перейти к оплате' &&
       text !== 'Назад'
     ) {
-      const merchantLogin = 'FloriMondibot';
+      const merchantLogin = 'Florimnodi';
       const password1 = 'lLj8x1UR4zvz7M7WezHS';
       const invId = Math.floor(100000 + Math.random() * 900000);
 
