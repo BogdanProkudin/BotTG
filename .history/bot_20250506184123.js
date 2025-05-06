@@ -676,31 +676,19 @@ bot.onText(/\/delete/, async (msg) => {
 
 bot.onText(/^\/reply (\d+) (.+)/s, async (msg, match) => {
   const adminId = msg.from.id;
-  const userId = parseInt(match[1]); // ID пользователя
+  const userId = match[1]; // ID пользователя
   const replyText = match[2]; // Ответ от админа
-
+  const user = await ;
   try {
-    // Получаем пользователя из базы
-    const user = await collectionUser.findOne({ userId });
+    console.log('her', user);
 
-    if (!user) {
-      return await bot.sendMessage(adminId, '❌ Пользователь не найден.');
-    }
-
-    // Проверяем, в разделе ли он поддержки
-    if (user.processType === 'support') {
+    if (user && user.processType && user.processType === 'support') {
       await bot.sendMessage(userId, `📬 Ответ поддержки:\n\n${replyText}`);
-    } else {
-      await bot.sendMessage(
-        -1002572728889,
-        `⚠️ Пользователь с айди ${userId} не в разделе поддержки.`
-      );
     }
   } catch (err) {
-    await bot.sendMessage(-1002572728889, `❌ Ошибка при отправке: ${err.message}`);
+    await bot.sendMessage(adminId, `❌ Не удалось отправить сообщение: ${err.message}`);
   }
 });
-
 // Обработчик кнопки "Назад"
 bot.on('text', async (msg) => {
   const chatId = msg.chat.id;
@@ -746,16 +734,15 @@ bot.on('text', async (msg) => {
       console.log('user в поддержке');
       await bot.sendMessage(
         chatId,
-        '📝 Пожалуйста, опишите вашу проблему или вопрос. Наша поддержка свяжется с вами в ближайшее время.',
+        'Напишите ваш вопрос и наша поддержка ответит вам как можно скорее ',
         {
           reply_markup: {
             keyboard: [['Назад']],
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
           },
         }
       );
-
       await collectionUser.updateOne(
         { userId },
         { $set: { processType: 'support', isInProcess: true } }

@@ -691,13 +691,10 @@ bot.onText(/^\/reply (\d+) (.+)/s, async (msg, match) => {
     if (user.processType === 'support') {
       await bot.sendMessage(userId, `📬 Ответ поддержки:\n\n${replyText}`);
     } else {
-      await bot.sendMessage(
-        -1002572728889,
-        `⚠️ Пользователь с айди ${userId} не в разделе поддержки.`
-      );
+      await bot.sendMessage(adminId, '⚠️ Пользователь не в разделе поддержки.');
     }
   } catch (err) {
-    await bot.sendMessage(-1002572728889, `❌ Ошибка при отправке: ${err.message}`);
+    await bot.sendMessage(adminId, `❌ Ошибка при отправке: ${err.message}`);
   }
 });
 
@@ -746,16 +743,15 @@ bot.on('text', async (msg) => {
       console.log('user в поддержке');
       await bot.sendMessage(
         chatId,
-        '📝 Пожалуйста, опишите вашу проблему или вопрос. Наша поддержка свяжется с вами в ближайшее время.',
+        'Напишите ваш вопрос и наша поддержка ответит вам как можно скорее ',
         {
           reply_markup: {
             keyboard: [['Назад']],
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
           },
         }
       );
-
       await collectionUser.updateOne(
         { userId },
         { $set: { processType: 'support', isInProcess: true } }

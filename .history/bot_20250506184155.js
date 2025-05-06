@@ -83,7 +83,7 @@ async function processPaymentNotification(req, res) {
     console.log(req.body);
 
     // Пароль 2, который вы используете для расчета хэша (обязательно замените на свой пароль)
-    const password2 = 'Sy6uRaE5b5Fh0NWlbXE8';
+    const password2 = 'VPXkrnNyoI9865vDif2k';
     if (!collectionUser) {
       return;
     }
@@ -524,12 +524,14 @@ bot.onText(/\/start/, async (msg) => {
       keyboard: [
         ['Онлайн-витрина', 'Наш каталог'],
         ['О нас', 'Мы на карте', 'Наш сайт'], // Кнопки в одном ряду
+        ['Поддержка'],
       ],
       resize_keyboard: true, // Делает кнопки компактными
       one_time_keyboard: true, // Убирает клавиатуру после нажатия
     },
   });
 });
+
 // Обработчик команды /add
 bot.onText(/\/add/, async (msg) => {
   const chatId = msg.chat.id;
@@ -546,7 +548,8 @@ bot.onText(/\/add/, async (msg) => {
     userId !== 6103809590 &&
     userId !== 5600075299 &&
     userId !== 1941288913 &&
-    userId !== 5557790556
+    userId !== 5557790556 &&
+    userId !== 1218030672
   ) {
     return;
   }
@@ -592,7 +595,8 @@ bot.onText(/\/edit/, async (msg) => {
     userId !== 6103809590 &&
     userId !== 5600075299 &&
     userId !== 1941288913 &&
-    userId !== 5557790556
+    userId !== 5557790556 &&
+    userId !== 1218030672
   ) {
     return;
   }
@@ -627,7 +631,8 @@ bot.onText(/\/delete/, async (msg) => {
     userId !== 6103809590 &&
     userId !== 5600075299 &&
     userId !== 1941288913 &&
-    userId !== 5557790556
+    userId !== 5557790556 &&
+    userId !== 1218030672
   ) {
     return;
   }
@@ -662,13 +667,28 @@ bot.onText(/\/delete/, async (msg) => {
   //   .then((docs) => {
   //     if (docs.length > 0) {
   //       collectionProduct.deleteOne({ _id: docs[0]._id });
-  //       console.log("Удален документ с _id:", docs[0]._id);
+  //       :Удален документ с _id:", docs[0]._id);
   //     } else {
   //       console.log("Документ с таким индексом не найден");
   //     }
   //   });
 });
 
+bot.onText(/^\/reply (\d+) (.+)/s, async (msg, match) => {
+  const adminId = msg.from.id;
+  const userId = match[1]; // ID пользователя
+  const replyText = match[2]; // Ответ от админа
+  await collectionUser.findOne({ userId });
+  try {
+    console.log('her', await collectionUser.findOne({ userId }), userId);
+
+    if (user && user.processType && user.processType === 'support') {
+      await bot.sendMessage(userId, `📬 Ответ поддержки:\n\n${replyText}`);
+    }
+  } catch (err) {
+    await bot.sendMessage(adminId, `❌ Не удалось отправить сообщение: ${err.message}`);
+  }
+});
 // Обработчик кнопки "Назад"
 bot.on('text', async (msg) => {
   const chatId = msg.chat.id;
@@ -694,6 +714,7 @@ bot.on('text', async (msg) => {
           keyboard: [
             ['Онлайн-витрина', 'Наш каталог'],
             ['О нас', 'Мы на карте', 'Наш сайт'],
+            ['Поддержка'],
           ],
           resize_keyboard: true, // Делает кнопки компактными
           one_time_keyboard: true, // Убирает клавиатуру после нажатия
@@ -704,6 +725,53 @@ bot.on('text', async (msg) => {
         { $set: { isInProcess: false, processType: null } }
       );
       return;
+    }
+
+    if (text === 'Назад' && user.processType && user.processType === 'support') {
+      console.log('user вышел');
+    }
+    if (text === 'Поддержка' && !user.isInProcess) {
+      console.log('user в поддержке');
+      await bot.sendMessage(
+        chatId,
+        'Напишите ваш вопрос и наша поддержка ответит вам как можно скорее ',
+        {
+          reply_markup: {
+            keyboard: [['Назад']],
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId },
+        { $set: { processType: 'support', isInProcess: true } }
+      );
+    }
+
+    if (
+      text !== 'Назад' &&
+      user.isInProcess &&
+      user.processType === 'support' &&
+      text !== '/menu'
+    ) {
+      try {
+        // Сохраняем обращение и пересылаем админам
+        const supportText = `✉️ Новое обращение от пользователя:
+  ID: ${userId}
+  Имя: ${msg.from.first_name}
+  Юзернейм: @${msg.from.username || 'нет'}
+
+  Сообщение: ${text}`;
+
+        const ADMIN_CHAT_ID = -1002572728889;
+
+        await bot.sendMessage(ADMIN_CHAT_ID, supportText);
+        await bot.sendMessage(chatId, 'Ваше сообщение передано в поддержку. Ожидайте ответа.');
+      } catch (error) {
+        await bot.sendMessage(ADMIN_CHAT_ID, 'Произошла ошибка при отправке сообщения ');
+        await bot.sendMessage(chatId, 'Произошла ошибка при отправке сообщения');
+      }
     }
 
     if (text === 'Назад' && user.processType !== 'finished') {
@@ -771,6 +839,7 @@ bot.on('text', async (msg) => {
             keyboard: [
               ['Онлайн-витрина', 'Наш каталог'],
               ['О нас', 'Мы на карте', 'Наш сайт'],
+              ['Поддержка'],
             ],
             resize_keyboard: true,
             one_time_keyboard: true,
@@ -967,6 +1036,7 @@ bot.on('text', async (msg) => {
             keyboard: [
               ['Онлайн-витрина', 'Наш каталог'],
               ['О нас', 'Мы на карте', 'Наш сайт'],
+              ['Поддержка'],
             ],
             resize_keyboard: true, // Делает кнопки компактными
             one_time_keyboard: true, // Убирает клавиатуру после нажатия
@@ -1051,6 +1121,7 @@ bot.on('message', async (msg) => {
           keyboard: [
             ['Онлайн-витрина', 'Наш каталог'],
             ['О нас', 'Мы на карте', 'Наш сайт'],
+            ['Поддержка'],
           ],
           resize_keyboard: true,
           one_time_keyboard: true,
@@ -1091,6 +1162,7 @@ bot.on('message', async (msg) => {
           keyboard: [
             ['Онлайн-витрина', 'Наш каталог'],
             ['О нас', 'Мы на карте', 'Наш сайт'],
+            ['Поддержка'],
           ],
           resize_keyboard: true,
           one_time_keyboard: true,
@@ -1703,8 +1775,8 @@ bot.on('message', async (msg) => {
       text === 'Перейти к оплате' &&
       text !== 'Назад'
     ) {
-      const merchantLogin = 'Florimnodi';
-      const password1 = 'Gux2OMl1lsq4HxGc12cQ';
+      const merchantLogin = 'FloriMondibot';
+      const password1 = 'lLj8x1UR4zvz7M7WezHS';
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const extraPrice =
@@ -1745,8 +1817,8 @@ bot.on('message', async (msg) => {
       text === 'Перейти к оплате' &&
       text !== 'Назад'
     ) {
-      const merchantLogin = 'Florimnodi';
-      const password1 = 'Gux2OMl1lsq4HxGc12cQ';
+      const merchantLogin = 'FloriMondibot';
+      const password1 = 'lLj8x1UR4zvz7M7WezHS';
       const invId = Math.floor(100000 + Math.random() * 900000);
 
       const extraPrice =
@@ -2576,7 +2648,7 @@ bot.on('callback_query', async (query) => {
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
       console.log('selectedProduct', selectedProduct);
-
+      const numericPrice = await parseInt(price[1].replace(/\s|₽/g, ''), 10);
       if (user.message_to_delete) {
         await bot.deleteMessage(chatId, user.message_to_delete);
       }
@@ -2597,7 +2669,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: price[1],
+            price: numericPrice,
           },
         }
       );
@@ -2610,7 +2682,8 @@ bot.on('callback_query', async (query) => {
       const calendar = generateCalendar(year, month);
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
-      console.log(price);
+      const numericPrice = await parseInt(price[1].replace(/\s|₽/g, ''), 10);
+      console.log('QQQQ', price, 'QQw', numericPrice);
 
       console.log('selectedProduct', selectedProduct);
 
@@ -2634,7 +2707,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: price[1],
+            price: numericPrice,
           },
         }
       );
@@ -2648,6 +2721,7 @@ bot.on('callback_query', async (query) => {
       const calendar = generateCalendar(year, month);
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
+      const numericPrice = await parseInt(price[1].replace(/\s|₽/g, ''), 10);
       console.log('selectedProduct', selectedProduct);
       if (user.message_to_delete) {
         await bot.deleteMessage(chatId, user.message_to_delete);
@@ -2670,7 +2744,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: price[1],
+            price: numericPrice,
           },
         }
       );
@@ -2686,7 +2760,7 @@ bot.on('callback_query', async (query) => {
 
       const price = selectedProduct.caption.match(/Цена:\s*(.+)/);
       console.log('selectedProduct', selectedProduct);
-
+      const numericPrice = await parseInt(price[1].replace(/\s|₽/g, ''), 10);
       if (user.message_to_delete) {
         await bot.deleteMessage(chatId, user.message_to_delete);
       }
@@ -2708,7 +2782,7 @@ bot.on('callback_query', async (query) => {
             processType: 'select_date',
             photo: selectedProduct.photo,
             message_to_delete: sentMessage.message_id,
-            price: price[1],
+            price: numericPrice,
           },
         }
       );

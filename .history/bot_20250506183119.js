@@ -676,31 +676,15 @@ bot.onText(/\/delete/, async (msg) => {
 
 bot.onText(/^\/reply (\d+) (.+)/s, async (msg, match) => {
   const adminId = msg.from.id;
-  const userId = parseInt(match[1]); // ID пользователя
+  const userId = match[1]; // ID пользователя
   const replyText = match[2]; // Ответ от админа
 
   try {
-    // Получаем пользователя из базы
-    const user = await collectionUser.findOne({ userId });
-
-    if (!user) {
-      return await bot.sendMessage(adminId, '❌ Пользователь не найден.');
-    }
-
-    // Проверяем, в разделе ли он поддержки
-    if (user.processType === 'support') {
-      await bot.sendMessage(userId, `📬 Ответ поддержки:\n\n${replyText}`);
-    } else {
-      await bot.sendMessage(
-        -1002572728889,
-        `⚠️ Пользователь с айди ${userId} не в разделе поддержки.`
-      );
-    }
+    await bot.sendMessage(userId, `📬 Ответ поддержки:\n\n${replyText}`);
   } catch (err) {
-    await bot.sendMessage(-1002572728889, `❌ Ошибка при отправке: ${err.message}`);
+    await bot.sendMessage(adminId, `❌ Не удалось отправить сообщение: ${err.message}`);
   }
 });
-
 // Обработчик кнопки "Назад"
 bot.on('text', async (msg) => {
   const chatId = msg.chat.id;
@@ -746,16 +730,15 @@ bot.on('text', async (msg) => {
       console.log('user в поддержке');
       await bot.sendMessage(
         chatId,
-        '📝 Пожалуйста, опишите вашу проблему или вопрос. Наша поддержка свяжется с вами в ближайшее время.',
+        'Напишите ваш вопрос и наша поддержка ответит вам как можно скорее ',
         {
           reply_markup: {
             keyboard: [['Назад']],
-            resize_keyboard: true,
-            one_time_keyboard: true,
+            resize_keyboard: true, // Делает кнопки компактными
+            one_time_keyboard: true, // Убирает клавиатуру после нажатия
           },
         }
       );
-
       await collectionUser.updateOne(
         { userId },
         { $set: { processType: 'support', isInProcess: true } }
@@ -768,22 +751,21 @@ bot.on('text', async (msg) => {
       user.processType === 'support' &&
       text !== '/menu'
     ) {
-      try {
-        // Сохраняем обращение и пересылаем админам
-        const supportText = `✉️ Новое обращение от пользователя:
+      try{
+      // Сохраняем обращение и пересылаем админам
+      const supportText = `✉️ Новое обращение от пользователя:
   ID: ${userId}
   Имя: ${msg.from.first_name}
   Юзернейм: @${msg.from.username || 'нет'}
 
   Сообщение: ${text}`;
 
-        const ADMIN_CHAT_ID = -1002572728889;
+      const ADMIN_CHAT_ID = -1002572728889;
 
-        await bot.sendMessage(ADMIN_CHAT_ID, supportText);
-        await bot.sendMessage(chatId, 'Ваше сообщение передано в поддержку. Ожидайте ответа.');
-      } catch (error) {
-        await bot.sendMessage(ADMIN_CHAT_ID, 'Произошла ошибка при отправке сообщения ');
-        await bot.sendMessage(chatId, 'Произошла ошибка при отправке сообщения');
+      await bot.sendMessage(ADMIN_CHAT_ID, supportText);
+      await bot.sendMessage(chatId, 'Ваше сообщение передано в поддержку. Ожидайте ответа.');
+      }catch(error){
+        await bot.sendMessage(chatId,"Проиозошлка ошибка при отправке сообщения")
       }
     }
 
