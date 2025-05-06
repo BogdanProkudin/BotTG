@@ -779,10 +779,10 @@ bot.on('text', async (msg) => {
 
         const ADMIN_CHAT_ID = -1002572728889;
 
-        await bot.sendMessage(ADMIN_CHAT_ID, supportText);
+        await bot.sendMessage(-1002572728889, supportText);
         await bot.sendMessage(chatId, 'Ваше сообщение передано в поддержку. Ожидайте ответа.');
       } catch (error) {
-        await bot.sendMessage(ADMIN_CHAT_ID, 'Произошла ошибка при отправке сообщения ');
+        await bot.sendMessage(-1002572728889, 'Произошла ошибка при отправке сообщения ');
         await bot.sendMessage(chatId, 'Произошла ошибка при отправке сообщения');
       }
     }
