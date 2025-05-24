@@ -912,20 +912,20 @@ bot.on("text", async (msg) => {
         return;
       }
       if (text !== "Назад") {
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { step: "getCategoryItemName", categoryName: text } }
-      );
-      bot.sendMessage(chatId, "Вы хотите изменить название категории?", {
-        reply_markup: {
-          keyboard: [["Да", "Нет"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
+        await collectionUser.updateOne(
+          { userId },
+          { $set: { step: "getCategoryItemName", categoryName: text } }
+        );
+        bot.sendMessage(chatId, "Вы хотите изменить название категории?", {
+          reply_markup: {
+            keyboard: [["Да", "Нет"]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+          },
+        });
+      }
     }
-  }
- 
+
     if (
       text === "Назад" &&
       user.processType &&
@@ -1526,24 +1526,30 @@ bot.on("message", async (msg) => {
     }
     console.log(user.step, "user.step", text);
 
-if(text !== "Назад" && user.step === "getCategoryItemName" && text === "Да"){ 
-  await bot.sendMessage(chatId, "Выберите новое название категории", {
-    reply_markup: {
-      keyboard: [["Назад"]],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  });
-  await collectionUser.updateOne(
-    { userId },
-    {
-   
-      $set: { step: "waitForNewCategoryName" },
+    if (
+      text !== "Назад" &&
+      user.step === "getCategoryItemName" &&
+      text === "Да"
+    ) {
+      await bot.sendMessage(chatId, "Выберите новое название категории", {
+        reply_markup: {
+          keyboard: [["Назад"]],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+      await collectionUser.updateOne(
+        { userId },
+        {
+          $set: { step: "waitForNewCategoryName" },
+        }
+      );
     }
-  );
-
-}
-    if (text !== "Назад" && user.step === "getCategoryItemName"&& text === "Нет") {
+    if (
+      text !== "Назад" &&
+      user.step === "getCategoryItemName" &&
+      text === "Нет"
+    ) {
       console.log("getCategoryItemName");
 
       const slidesFor4k = await collectionCategory.findOne({
