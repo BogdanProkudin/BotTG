@@ -21,7 +21,6 @@ import validateAddress, {
   getAddressFromCoordinates,
 } from "./validateAddress.js";
 import axios from "axios";
-import { log } from "console";
 
 // Вставьте токен вашего бота
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -621,7 +620,7 @@ bot.onText(/\/add/, async (msg) => {
   });
 });
 
-bot.onText(/\/ИзменитьКатегорию/, async (msg) => {
+bot.onText(/\/updateCategory/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const chatType = msg.chat.type; // 'private', 'group', 'supergroup'
@@ -888,44 +887,40 @@ bot.on("text", async (msg) => {
         "categoryInfo.id": "4",
       });
       if (
-        slidesFor4k.categoryInfo.name !== text &&
-        slidesFor7k.categoryInfo.name !== text &&
-        slidesFor10k.categoryInfo.name !== text &&
-        slidesFor14k.categoryInfo.name !== text &&
-        text !== "Назад"
+        slidesFor4k.categoryInfo.name === text ||
+        slidesFor7k.categoryInfo.name === text ||
+        slidesFor10k.categoryInfo.name === text ||
+        slidesFor14k.categoryInfo.name === text
       ) {
-        await collectionUser.updateOne(
-          { userId },
-          { $set: { step: "getCategoryName" } }
-        );
-        bot.sendMessage(chatId, "Такая категория не существует", {
-          reply_markup: {
-            keyboard: [
-              [slidesFor4k.categoryInfo.name, slidesFor7k.categoryInfo.name],
-              [slidesFor14k.categoryInfo.name, slidesFor10k.categoryInfo.name],
-              ["Назад"],
-            ],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
+        const selectedCategory = await collectionCategory.findOne({
+          "categoryInfo.name": text,
         });
-        return;
+
+        await selectedCategory.categoryItem.forEach(async (item, index) => {
+          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
+            caption: item.caption,
+            parse_mode: "Markdown",
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Изменить",
+                    callback_data: `update_category_${item.itemId}`,
+                  },
+                ],
+              ],
+            },
+          });
+          await collectionUser.updateOne(
+            { userId },
+            {
+              $push: { photo_to_delete: sentMessage.message_id },
+              $set: { step: "getCategoryId" },
+            }
+          );
+        });
       }
-      if (text !== "Назад") {
-      await collectionUser.updateOne(
-        { userId },
-        { $set: { step: "getCategoryItemName", categoryName: text } }
-      );
-      bot.sendMessage(chatId, "Вы хотите изменить название категории?", {
-        reply_markup: {
-          keyboard: [["Да", "Нет"]],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
-      });
     }
-  }
- 
     if (
       text === "Назад" &&
       user.processType &&
@@ -1311,12 +1306,7 @@ bot.on("photo", async (msg) => {
     );
     await collectionUser.updateOne(
       { userId },
-      {
-        $set: {
-          step: "getCategorySubName",
-          processType: "update_category_name",
-        },
-      }
+      { $set: { step: "getCategoryName", processType: "update_category_name" } }
     );
   }
 
@@ -1517,102 +1507,17 @@ bot.on("message", async (msg) => {
         user.processType !== "delete" &&
         user.processType !== "showcase1" &&
         user.processType !== "showcase2" &&
-        user.processType !== "update_category_name" &&
-        user.step !== "getCategoryItemName")
+        user.processType !== "update_category_name")
     ) {
       console.log("User is in process");
 
       return; // Не обрабатываем, если пользователь в процессе
     }
-    console.log(user.step, "user.step", text);
-
-if(text !== "Назад" && user.step === "getCategoryItemName" && text === "Да"){ 
-  await bot.sendMessage(chatId, "Выберите новое название категории", {
-    reply_markup: {
-      keyboard: [["Назад"]],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  });
-  await collectionUser.updateOne(
-    { userId },
-    {
-   
-      $set: { step: "waitForNewCategoryName" },
-    }
-  );
-
-}
-    if (text !== "Назад" && user.step === "getCategoryItemName"&& text === "Нет") {
-      console.log("getCategoryItemName");
-
-      const slidesFor4k = await collectionCategory.findOne({
-        "categoryInfo.id": "1",
-      });
-      const slidesFor7k = await collectionCategory.findOne({
-        "categoryInfo.id": "2",
-      });
-      const slidesFor10k = await collectionCategory.findOne({
-        "categoryInfo.id": "3",
-      });
-      const slidesFor14k = await collectionCategory.findOne({
-        "categoryInfo.id": "4",
-      });
-      if (
-        slidesFor4k.categoryInfo.name === user.categoryName ||
-        slidesFor7k.categoryInfo.name === user.categoryName ||
-        slidesFor10k.categoryInfo.name === user.categoryName ||
-        slidesFor14k.categoryInfo.name === user.categoryName
-      ) {
-        const selectedCategory = await collectionCategory.findOne({
-          "categoryInfo.name": user.categoryName,
-        });
-
-        await selectedCategory.categoryItem.forEach(async (item, index) => {
-          const sentMessage = await bot.sendPhoto(chatId, item.photo, {
-            caption: item.caption,
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: "Изменить",
-                    callback_data: `update_category_${item.itemId}`,
-                  },
-                ],
-              ],
-            },
-          });
-          await collectionUser.updateOne(
-            { userId },
-            {
-              $push: { photo_to_delete: sentMessage.message_id },
-              $set: { step: "getCategoryId" },
-            }
-          );
-        });
-      }
-    }
 
     if (text !== "Назад" && user.processType === "update_category_name") {
       await collectionCategory.updateOne(
         { "categoryItem.itemId": user.itemId },
-        {
-          $set: {
-            "categoryItem.$.caption": text,
-          },
-        }
-      );
-      await collectionUser.updateOne(
-        { userId },
-        {
-          $set: {
-            isInProcess: false,
-            processType: null,
-            step: null,
-            categoryName: null,
-          },
-        }
+        { $set: { "categoryItem.$.caption": text,proce } }
       );
       await bot.sendMessage(
         chatId,
@@ -3466,5 +3371,5 @@ function parseCallbackData(callbackData) {
 }
 
 app.listen(3004, () => {
-  console.log(`Сервер запущен на http://localhost:${3004}`);
+  console.log(`Сервер запущен на http://localhost:${3000}`);
 });
