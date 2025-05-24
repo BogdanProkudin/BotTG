@@ -3471,6 +3471,6 @@ function parseCallbackData(callbackData) {
   return { price, id };
 }
 
-app.listen(3004, () => {
+app.listen(3003, () => {
   console.log(`Сервер запущен на http://localhost:${3004}`);
 });
