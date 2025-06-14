@@ -3400,20 +3400,19 @@ bot.on('callback_query', async (query) => {
       //     },
       //   }
       // );
-       await collectionUser.updateOne(
-         { userId: chatId },
-         {
-           $set: {
-             isInProcess: true,
-             processType: 'rules',
-             photo: photo,
-             message_to_delete: sentMessage.message_id,
-             price: numericPrice,
-           },
-         }
-       );
-
-
+      // await collectionUser.updateOne(
+      //   { userId: chatId },
+      //   {
+      //     $set: {
+      //       isInProcess: true,
+      //       processType: 'select_date',
+      //       photo: photo,
+      //       message_to_delete: sentMessage.message_id,
+      //       price: numericPrice,
+      //     },
+      //   }
+      // );
+    await collectionUser.
 
     } else if (vitrinaData.price === '7') {
       const selectedProduct = await collectionCategory.findOne({

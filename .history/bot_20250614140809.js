@@ -3405,7 +3405,7 @@ bot.on('callback_query', async (query) => {
          {
            $set: {
              isInProcess: true,
-             processType: 'rules',
+             processType: 'select_date',
              photo: photo,
              message_to_delete: sentMessage.message_id,
              price: numericPrice,

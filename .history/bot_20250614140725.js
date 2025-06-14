@@ -3391,30 +3391,27 @@ bot.on('callback_query', async (query) => {
       if (user.message_to_delete) {
         await bot.deleteMessage(chatId, user.message_to_delete);
       }
-      // const sentMessage = await bot.sendMessage(
-      //   chatId,
-      //   '📅Пожалуйста, выберите удобную вам дату:',
-      //   {
-      //     reply_markup: {
-      //       inline_keyboard: calendar,
-      //     },
-      //   }
-      // );
-       await collectionUser.updateOne(
-         { userId: chatId },
-         {
-           $set: {
-             isInProcess: true,
-             processType: 'rules',
-             photo: photo,
-             message_to_delete: sentMessage.message_id,
-             price: numericPrice,
-           },
-         }
-       );
-
-
-
+      const sentMessage = await bot.sendMessage(
+        chatId,
+        '📅Пожалуйста, выберите удобную вам дату:',
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $set: {
+            isInProcess: true,
+            processType: 'select_date',
+            photo: photo,
+            message_to_delete: sentMessage.message_id,
+            price: numericPrice,
+          },
+        }
+      );
     } else if (vitrinaData.price === '7') {
       const selectedProduct = await collectionCategory.findOne({
         'categoryInfo.id': '2',
