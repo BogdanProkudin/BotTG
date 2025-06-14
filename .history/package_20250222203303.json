@@ -19,7 +19,7 @@
     "telegram-inline-calendar": "^2.2.0"
   },
   "scripts": {
-    "start": "node bot.js"
+    "start": "nodemon bot.js"
   },
   "devDependencies": {
     "@types/node-telegram-bot-api": "^0.64.7"
