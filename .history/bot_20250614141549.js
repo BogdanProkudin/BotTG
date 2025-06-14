@@ -3393,7 +3393,7 @@ bot.on('callback_query', async (query) => {
       }
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        'Вы должны согласится с нашей политикой',
         {
           reply_markup: {
             keyboard:[["Да","Ознакомится","Нет"]]
@@ -3439,10 +3439,10 @@ bot.on('callback_query', async (query) => {
       }
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?:',
+        '📅Пожалуйста, выберите удобную вам дату:',
         {
           reply_markup: {
-           keyboard:[["Да","Ознакомится","Нет"]]
+            inline_keyboard: calendar,
           },
         }
       );
@@ -3453,7 +3453,7 @@ bot.on('callback_query', async (query) => {
         {
           $set: {
             isInProcess: true,
-            processType: 'rules',
+            processType: 'select_date',
             photo: photo,
             message_to_delete: sentMessage.message_id,
             price: numericPrice,
@@ -3486,10 +3486,10 @@ bot.on('callback_query', async (query) => {
 
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        '📅Пожалуйста, выберите удобную вам дату:',
         {
           reply_markup: {
-           keyboard:[["Да","Ознакомится","Нет"]]
+            inline_keyboard: calendar,
           },
         }
       );
@@ -3498,7 +3498,7 @@ bot.on('callback_query', async (query) => {
         {
           $set: {
             isInProcess: true,
-            processType: 'rules',
+            processType: 'select_date',
             photo: photo,
             message_to_delete: sentMessage.message_id,
             price: numericPrice,
@@ -3531,10 +3531,10 @@ bot.on('callback_query', async (query) => {
 
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        '📅Пожалуйста, выберите удобную вам дату:',
         {
           reply_markup: {
-            keyboard:[["Да","Ознакомится","Нет"]]
+            inline_keyboard: calendar,
           },
         }
       );
@@ -3543,7 +3543,7 @@ bot.on('callback_query', async (query) => {
         {
           $set: {
             isInProcess: true,
-            processType: 'rules',
+            processType: 'select_date',
             photo: photo,
             message_to_delete: sentMessage.message_id,
             price: numericPrice,

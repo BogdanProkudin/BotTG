@@ -3393,7 +3393,7 @@ bot.on('callback_query', async (query) => {
       }
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        'Вы должны согласится с нашей политикой',
         {
           reply_markup: {
             keyboard:[["Да","Ознакомится","Нет"]]
@@ -3439,7 +3439,7 @@ bot.on('callback_query', async (query) => {
       }
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?:',
+        'Принимаете ли вы нашу  политику конфиндициальности:',
         {
           reply_markup: {
            keyboard:[["Да","Ознакомится","Нет"]]
@@ -3486,7 +3486,7 @@ bot.on('callback_query', async (query) => {
 
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        'Принимаете ли вы нашу  политику конфиндициальности',
         {
           reply_markup: {
            keyboard:[["Да","Ознакомится","Нет"]]
@@ -3531,7 +3531,7 @@ bot.on('callback_query', async (query) => {
 
       const sentMessage = await bot.sendMessage(
         chatId,
-        'Принимаете ли вы нашу  политику конфиндициальности?',
+        'Принимаете ли вы нашу  политику конфиндициальности',
         {
           reply_markup: {
             keyboard:[["Да","Ознакомится","Нет"]]
