@@ -436,11 +436,7 @@ bot.on('location', async (msg) => {
       await bot.sendMessage(chatId, address);
     }
     // Обновление статуса пользователя
-  }
 
-  //   bot.sendLocation(chatId, latitude, longitude);
-});
-// import { getDistance } from "geolib";
 // bot.onText(/\/noob/, async (msg) => {
 //   async function getCoordinates(address) {
 //     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
@@ -1664,7 +1660,7 @@ if(user && user.isInProcess && user.processType === "rules" && text === "Нет"
 if(user && user.isInProcess && user.processType === 'rules' && text === "Ознакомится"){
    const chatId = msg.chat.id;
 
-      bot.sendDocument(chatId, "https://github.com/BogdanProkudin/BotTG/blob/b0381d1071b6017a4b55de80a631f5ab3c46c8c2/%D0%9F%D0%BE%D0%BB%D0%B8%D1%82%D0%B8%D0%BA%D0%B0%D0%9A%D0%BE%D0%BD%D0%B4%D0%B8%D1%84%D0%B8%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8.docx", {
+      bot.sendDocument(chatId, "./ПолитикаКондификальности.docx", {
   caption: 'Документ с нашей политикой конфиденциальности',
   filename: 'MyDocument.docx',
   reply_markup:{
