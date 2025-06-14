@@ -278,5 +278,5 @@ if(user && user.processType === "rules_text"){
 
     }
   );
-  return "Процесс отменён. Вы вернулись в главное меню.";
+  return user && user.processType === "rules_text" && "Процесс отменён. Вы вернулись в главное меню.";
 }

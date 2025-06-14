@@ -1,4 +1,3 @@
-
 import TelegramBot from 'node-telegram-bot-api';
 import { generateCalendar, getMonthName } from './calendar.js';
 import { MongoClient } from 'mongodb';
@@ -20,7 +19,6 @@ import { log } from 'console';
 
 // Вставьте токен вашего бота
 const BOT_TOKEN = process.env.BOT_TOKEN;
-
 const app = express();
 console.log('🟢 Файл bot.js начал выполнение'); // Проверим, запускается ли скрипт вообще
 app.use(cors());
@@ -1276,9 +1274,7 @@ bot.on('text', async (msg) => {
           },
         });
         return;
-      } else{
-
-
+      } else {
         const message = await cancelProcess(userId, collectionUser);
         const user = await collectionUser.findOne({ userId });
         if (!user) {
@@ -1573,11 +1569,7 @@ bot.on('message', async (msg) => {
         user.step !== 'getCategoryItemName' &&
         user.step !== 'waitForNewCategoryName' &&
         user.processType !== 'add_category_item_photo' &&
-        user.processType !== 'add_category_item_photo_description' && user.processType !== "rules"&&
-        user.proccesType !== "rules_text")
-
-
-
+        user.processType !== 'add_category_item_photo_description')
     ) {
       console.log('User is in process');
 
@@ -1587,130 +1579,6 @@ bot.on('message', async (msg) => {
 
     const newItem = {};
 
-if(user && user.isInProcess && user.processType === "rules" && text === "Да"){
-    const chatId = msg.chat.id;
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-
-      const calendar = generateCalendar(year, month);
-await bot.sendMessage(chatId,"Спасибо! Вы согласились с политикой конфиденциальности",{
-  reply_markup:{
-    keyboard:[["Назад"]]
-  }
-})
-
-      const messageWithCalendar = await bot.sendMessage(
-        chatId,
-        '📅Пожалуйста, выберите удобную вам дату:          ',
-        {
-          reply_markup: {
-            inline_keyboard: calendar,
-
-            resize_keyboard: true,
-          },
-        }
-      );
-      await collectionUser.updateOne(
-        { userId: chatId },
-        {
-          $push: {
-            message_to_delete: messageWithCalendar.message_id,
-          },
-        }
-      );
-}
-if(user && user.isInProcess && user.processType === "rules" && text === "Нет"){
-  const chatId = msg.chat.id;
-
-       await bot.sendMessage(
-        chatId,
-        'Вы не приняли нашу политику вы вернулись в главное меню  ',
-        {
-          reply_markup: {
-            keyboard: [
-            ['Онлайн-витрина', 'Наш каталог'],
-            ['О нас', 'Мы на карте', 'Наш сайт'],
-            ['Поддержка'],
-          ],
-            resize_keyboard: true,
-          },
-        }
-      );
-      await collectionUser.findOneAndUpdate(
-        { userId },
-        {
-          $set: {
-            isInProcess: false,
-            processType: null,
-            message_to_delete: null,
-            MKAD: null,
-            address: null,
-            clientNumber: null,
-            selectedDate: null,
-            whoIsClient: null,
-            currentShow: null,
-            recipientNumber: null,
-            photo_to_delete: [],
-            time: null,
-            step: null,
-            addCategoryName: null,
-            categoryName: null,
-            categoryProcessType: null,
-          },
-        }
-      );
-}
-if(user && user.isInProcess && user.processType === 'rules' && text === "Ознакомится"){
-   const chatId = msg.chat.id;
-
-      bot.sendDocument(chatId, "./ПолитикаКондификальности.docx", {
-  caption: 'Документ с нашей политикой конфиденциальности',
-  filename: 'MyDocument.docx',
-  reply_markup:{
-    keyboard:[["Вернуться назад"]]
-  }
-}).then(async() => {
-  await collectionUser.updateOne(
-        { userId: chatId },
-        {
-          $set: {
-          proccesType:"rules_text"
-          },
-        }
-      );
-  console.log('Файл отправлен!');
-}).catch((error) => {
-  console.error('Ошибка при отправке:', error);
-});
-}
-
-
-if(user && user.isInProcess && user.proccesType === "rules_text" && text === "Вернуться назад"){
-    const chatId = msg.chat.id;
-
-       await bot.sendMessage(
-        chatId,
-        'Вы вернулись к выбору',
-        {
-          reply_markup: {
-            keyboard: [
-            ['Да',"Ознакомится","Нет"],
-          ],
-            resize_keyboard: true,
-          },
-        }
-      );
-        await collectionUser.updateOne(
-        { userId: chatId },
-        {
-          $set: {
-          proccesType:"rules"
-          },
-        }
-      );
-
-}
     if (user && user.isInProcess && user.processType === 'add_category_item_photo_description') {
       if (text !== 'Назад') {
         newItem.caption = text;
@@ -2025,34 +1893,48 @@ if(user && user.isInProcess && user.proccesType === "rules_text" && text === "В
 
       const selectedProduct = product[0];
 
-         await collectionUser.updateOne(
-        { userId },
-        {
-          $set: {
-            selectedProduct,
-            processType: "rules",
-            price: selectedProduct.price,
-            photo: selectedProduct.photo,
-          },
-        }
-      );
+      // await collectionUser.updateOne(
+      //   { userId },
+      //   {
+      //     $set: {
+      //       selectedProduct,
+      //       processType: "select_date",
+      //       price: selectedProduct.price,
+      //       photo: selectedProduct.photo,
+      //     },
+      //   }
+      // );
 
       const chatId = msg.chat.id;
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth();
 
-
+      const calendar = generateCalendar(year, month);
       await bot.sendMessage(chatId, 'Букет выбран!', {
         reply_markup: {
           keyboard: [['Назад']],
         },
       });
+      const messageWithCalendar = await bot.sendMessage(
+        chatId,
+        '📅Пожалуйста, выберите удобную вам дату:          ',
+        {
+          reply_markup: {
+            inline_keyboard: calendar,
 
-
-      await bot.sendMessage(chatId,"Согласны ли вы с нашей политикой конфиденциальности?",{reply_markup:{
-        keyboard:[["Да"],["Ознакомится"],["Нет"]]
-      }})
+            resize_keyboard: true,
+          },
+        }
+      );
+      await collectionUser.updateOne(
+        { userId: chatId },
+        {
+          $push: {
+            message_to_delete: messageWithCalendar.message_id,
+          },
+        }
+      );
     } else if (user.processType === 'prepare_address') {
       if (text === 'Самовывоз') {
         const availableTimes = getAvailableShippingTime(user);

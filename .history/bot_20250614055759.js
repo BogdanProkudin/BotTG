@@ -61,7 +61,7 @@ MongoClient.connect(
   .then((client) => {
     db = client.db();
     collectionUser = db.collection('dbUser');
-    collectionProduct = db.collection('db1');
+    collectionProduct = db.collection('dbz');
     collectionCategory = db.collection('flower-category');
     console.log('Connected to MongoDB');
   })

@@ -45,9 +45,7 @@ export async function deleteProduct(userId, collectionUser) {
 export async function cancelProcess(userId, collectionUser) {
   const user = await collectionUser.findOne({ userId });
 
-if(user && user.processType === "rules_text"){
-  return
-}
+if(user)
 
   if (
     (user && user.processType === "catalog_price=4000") ||

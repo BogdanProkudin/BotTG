@@ -44,11 +44,6 @@ export async function deleteProduct(userId, collectionUser) {
 // Функция отмены процесса
 export async function cancelProcess(userId, collectionUser) {
   const user = await collectionUser.findOne({ userId });
-
-if(user && user.processType === "rules_text"){
-  return
-}
-
   if (
     (user && user.processType === "catalog_price=4000") ||
     (user && user.processType === "catalog_price=8000") ||
@@ -275,7 +270,7 @@ if(user && user.processType === "rules_text"){
         photo_to_delete: [],
         message_to_delete: null,
       }
-
+      
     }
   );
   return "Процесс отменён. Вы вернулись в главное меню.";
