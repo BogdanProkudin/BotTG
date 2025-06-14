@@ -1664,7 +1664,7 @@ if(user && user.isInProcess && user.processType === "rules" && text === "Нет"
 if(user && user.isInProcess && user.processType === 'rules' && text === "Ознакомится"){
    const chatId = msg.chat.id;
 
-      bot.sendDocument(chatId, "./ПолитикаКондифициальности.docx", {
+      bot.sendDocument(chatId, ".", {
   caption: 'Документ с нашей политикой конфиденциальности',
   filename: 'MyDocument.docx',
   reply_markup:{
