@@ -164,7 +164,7 @@ async function processPaymentNotification(req, res) {
       await bot.sendMessage(
         -1002291227368,
         `✅ *Оплата успешно прошла!*\n\n` +
-          `💰 *Цена:* ${extraPrice}\n` +
+          `💰 *Цена:* ${user.price + extraPrice}\n` +
           `📧 *Email:* ${EMail}\n` +
           `📷 *Ссылка на фото:* [Открыть фото](${photoUrl})\n` +
           `📞 *Номер телефона заказчика:* ${
@@ -197,7 +197,7 @@ async function processPaymentNotification(req, res) {
       await bot.sendMessage(
         user.userId,
         `✅ *Оплата успешно прошла!*\n\n` +
-          `💰 *Цена:* ${extraPrice}\n` +
+          `💰 *Цена:* ${user.price + extraPrice}\n` +
           `📧 *Email:* ${EMail}\n` +
           `📷 *Ссылка на фото:* [Открыть фото](${photoUrl})\n` +
           `📞 *Номер телефона заказчика:* ${
