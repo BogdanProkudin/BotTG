@@ -596,6 +596,7 @@ bot.onText(/\/add/, async (msg) => {
     return;
   }
   if (
+    userId !== 878817642 &&
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
@@ -643,6 +644,7 @@ bot.onText(/\/ДобавитьКатегорию/, async (msg) => {
     return;
   }
   if (
+    userId !== 878817642 &&
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
@@ -727,6 +729,7 @@ bot.onText(/\/ИзменитьКатегорию/, async (msg) => {
     return;
   }
   if (
+    userId !== 878817642 &&
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
@@ -805,6 +808,7 @@ bot.onText(/\/edit/, async (msg) => {
     return;
   }
   if (
+    userId !== 878817642 &&
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
@@ -844,6 +848,7 @@ bot.onText(/\/delete/, async (msg) => {
     return;
   }
   if (
+    userId !== 878817642 &&
     userId !== 833391720 &&
     userId !== 6103809590 &&
     userId !== 5600075299 &&
